@@ -523,6 +523,9 @@ function renderSignals(signals) {
     const stCls  = s.st_bull ? 'g' : 'r';
     const volCls = s.vol > 1.3 ? 'g' : s.vol < 0.7 ? 'r' : '';
 
+    // Skip cards with no meaningful data
+    if (!s.price && !s.rsi && !s.bias) return '';
+
     let tipHtml = '';
     if (s.tip) {
       const dirCls = s.tip.direction?.includes('BUY') ? 'buy' : 'sell';
