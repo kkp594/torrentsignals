@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TorrentSignals 🧟 — Frankenstein Stock Swarm</title>
+<style>
+/* ── Halloween theme ── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060608;--surface:#0f0d14;--card:#15121e;--border:#2a1f3d;
+  --purple:#9333ea;--purple2:#c084fc;--orange:#f97316;--green:#22c55e;
+  --red:#ef4444;--yellow:#eab308;--muted:#6b7280;--text:#e5e7eb;
+  --glow:0 0 20px rgba(147,51,234,0.4);
+}
+html{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#2a1f3d;border-radius:4px}
+
+/* ── Spooky background ── */
+body{min-height:100vh;position:relative;overflow-x:hidden}
+body::before{
+  content:'';position:fixed;inset:0;z-index:-1;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%,rgba(147,51,234,.15) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 50% at 80% 80%,rgba(249,115,22,.08) 0%,transparent 60%),
+    var(--bg);
+}
+
+/* ── Floating ghosts background ── */
+.ghost-bg{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.ghost-bg span{
+  position:absolute;font-size:2rem;opacity:.06;
+  animation:floatGhost linear infinite;
+}
+@keyframes floatGhost{
+  0%{transform:translateY(100vh) rotate(0deg);opacity:0}
+  10%{opacity:.06}
+  90%{opacity:.06}
+  100%{transform:translateY(-10vh) rotate(360deg);opacity:0}
+}
+
+/* ── Header ── */
+header{
+  background:rgba(15,13,20,.9);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;
+  padding:12px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.logo{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.logo span{color:var(--purple)}
+.logo em{color:var(--orange);font-style:normal}
+.tagline{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+
+/* ── Swarm status bar ── */
+.swarm-bar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:10px 24px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;
+}
+.swarm-stat{display:flex;flex-direction:column;align-items:center}
+.swarm-num{font-size:22px;font-weight:800;line-height:1}
+.swarm-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.swarm-num.purple{color:var(--purple)}
+.swarm-num.orange{color:var(--orange)}
+.swarm-num.green{color:var(--green)}
+.swarm-num.yellow{color:var(--yellow)}
+.swarm-divider{width:1px;height:36px;background:var(--border)}
+
+/* ── Peer status ── */
+.peer-card{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:10px 16px;display:flex;align-items:center;gap:10px;
+  min-width:200px;
+}
+.peer-dot{width:8px;height:8px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 8px var(--green);animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.peer-dot.computing{background:var(--orange);box-shadow:0 0 8px var(--orange)}
+.peer-dot.idle{background:var(--muted);box-shadow:none;animation:none}
+.peer-info{flex:1}
+.peer-id{font-size:12px;font-weight:700;color:var(--purple2)}
+.peer-task{font-size:11px;color:var(--muted);margin-top:1px}
+.peer-count{font-size:18px;font-weight:800;color:var(--green)}
+
+/* ── Main layout ── */
+.page{max-width:1400px;margin:0 auto;padding:20px 24px}
+
+/* ── Section header ── */
+.section-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.section-title{font-size:15px;font-weight:700;color:var(--text)}
+.section-badge{
+  background:rgba(147,51,234,.15);color:var(--purple2);
+  border:1px solid rgba(147,51,234,.3);border-radius:100px;
+  padding:2px 10px;font-size:11px;font-weight:600;
+}
+.section-line{flex:1;height:1px;background:var(--border)}
+
+/* ── Signal grid ── */
+.signal-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;
+  margin-bottom:28px;
+}
+
+/* ── Signal card ── */
+.sig-card{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;transition:all .2s;position:relative;
+}
+.sig-card:hover{border-color:var(--purple);box-shadow:var(--glow);transform:translateY(-2px)}
+.sig-card.bull{border-left:3px solid var(--green)}
+.sig-card.bear{border-left:3px solid var(--red)}
+.sig-card.neutral{border-left:3px solid var(--muted)}
+.sig-card.computing{border-left:3px solid var(--orange)}
+
+/* Card header */
+.sig-head{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:12px 14px 8px;border-bottom:1px solid rgba(42,31,61,.5);
+}
+.sig-sym{font-size:15px;font-weight:800}
+.sig-price{font-size:14px;font-weight:700;text-align:right}
+.sig-chg{font-size:11px;margin-top:2px}
+.sig-chg.up{color:var(--green)}.sig-chg.dn{color:var(--red)}
+
+/* Bias pill */
+.bias-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:2px 10px;border-radius:100px;font-size:11px;font-weight:700;
+  margin:8px 14px 0;
+}
+.bias-pill.bull{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.bias-pill.bear{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.bias-pill.neutral{background:rgba(107,114,128,.12);color:var(--muted);border:1px solid rgba(107,114,128,.2)}
+.bias-pill.computing{background:rgba(249,115,22,.12);color:var(--orange);border:1px solid rgba(249,115,22,.2)}
+
+/* Indicators */
+.sig-inds{
+  display:flex;gap:6px;padding:8px 14px;flex-wrap:wrap;
+}
+.ind-pill{
+  font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;
+  background:rgba(42,31,61,.8);color:var(--muted);
+}
+.ind-pill.g{background:rgba(34,197,94,.1);color:var(--green)}
+.ind-pill.r{background:rgba(239,68,68,.1);color:var(--red)}
+.ind-pill.y{background:rgba(234,179,8,.1);color:var(--yellow)}
+
+/* Tip row */
+.sig-tip{
+  margin:0 14px 12px;padding:8px 10px;
+  background:rgba(147,51,234,.08);border:1px solid rgba(147,51,234,.15);
+  border-radius:8px;font-size:11px;
+}
+.tip-dir{font-weight:800;margin-bottom:4px}
+.tip-dir.buy{color:var(--green)}.tip-dir.sell{color:var(--red)}
+.tip-levels{display:flex;gap:12px;flex-wrap:wrap}
+.tip-lv{display:flex;flex-direction:column}
+.tip-lv-lbl{font-size:9px;color:var(--muted);text-transform:uppercase}
+.tip-lv-val{font-size:12px;font-weight:700}
+.tip-lv-val.e{color:#60a5fa}.tip-lv-val.s{color:var(--red)}.tip-lv-val.t{color:var(--green)}
+
+/* Peer badge on card */
+.card-peer{
+  position:absolute;top:8px;right:8px;
+  font-size:9px;color:var(--muted);background:rgba(42,31,61,.8);
+  padding:1px 6px;border-radius:100px;
+}
+
+/* ── Computing skeleton ── */
+.computing-skeleton{
+  background:linear-gradient(90deg,var(--card) 25%,rgba(42,31,61,.5) 50%,var(--card) 75%);
+  background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite;
+  border-radius:8px;height:16px;margin:4px 0;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── Stats row ── */
+.stats-row{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:12px;margin-bottom:28px;
+}
+.stat-block{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:16px;text-align:center;
+}
+.stat-num{font-size:28px;font-weight:800;line-height:1}
+.stat-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+
+/* ── Swarm visual ── */
+.swarm-viz{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:20px;margin-bottom:28px;
+}
+.swarm-peers{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+.swarm-peer-node{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:12px;background:rgba(42,31,61,.5);border-radius:10px;
+  border:1px solid var(--border);min-width:100px;
+}
+.peer-icon{font-size:28px}
+.peer-node-id{font-size:10px;color:var(--purple2);font-weight:700}
+.peer-node-syms{font-size:10px;color:var(--muted);text-align:center}
+.peer-node-status{font-size:10px;padding:1px 8px;border-radius:100px}
+.peer-node-status.active{background:rgba(34,197,94,.1);color:var(--green)}
+.peer-node-status.idle{background:rgba(107,114,128,.1);color:var(--muted)}
+
+/* ── Buttons ── */
+.btn{
+  border:none;border-radius:8px;padding:9px 20px;font-size:13px;
+  font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;
+}
+.btn-primary{background:var(--purple);color:#fff}
+.btn-primary:hover{background:#7c3aed;transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--purple);color:var(--purple2)}
+.btn-orange{background:var(--orange);color:#fff}
+.btn-orange:hover{background:#ea6e00}
+
+/* ── Log ── */
+.log-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:16px;font-family:'Cascadia Code','Consolas',monospace;font-size:11px;
+  max-height:160px;overflow-y:auto;
+}
+.log-line{padding:2px 0;border-bottom:1px solid rgba(42,31,61,.4)}
+.log-line:last-child{border:none}
+.log-time{color:var(--muted);margin-right:8px}
+.log-msg.info{color:var(--purple2)}
+.log-msg.ok{color:var(--green)}
+.log-msg.warn{color:var(--yellow)}
+.log-msg.err{color:var(--red)}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:var(--card);border:1px solid var(--purple);border-radius:10px;
+  padding:12px 20px;font-size:13px;box-shadow:var(--glow);
+  opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── Responsive ── */
+@media(max-width:640px){
+  .swarm-bar{gap:12px}
+  .signal-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Floating ghosts background -->
+<div class="ghost-bg" id="ghostBg"></div>
+
+<!-- Header -->
+<header>
+  <div>
+    <div class="logo">Torrent<span>Signals</span> <em>🧟</em></div>
+    <div class="tagline">Frankenstein · Kiroween 2026 · Distributed Stock Analysis</div>
+  </div>
+  <div class="header-right">
+    <div class="peer-card" id="myPeerCard">
+      <div class="peer-dot computing" id="myDot"></div>
+      <div class="peer-info">
+        <div class="peer-id" id="myPeerId">Connecting to swarm…</div>
+        <div class="peer-task" id="myTask">Waiting for symbol assignment</div>
+      </div>
+      <div class="peer-count" id="myCount">0</div>
+    </div>
+    <button class="btn btn-primary" onclick="joinSwarm()">🔗 Join Swarm</button>
+    <button class="btn btn-orange" onclick="startComputing()">⚡ Compute</button>
+    <button class="btn btn-ghost" onclick="clearSignals()">🗑 Clear</button>
+  </div>
+</header>
+
+<!-- Swarm status bar -->
+<div class="swarm-bar">
+  <div class="swarm-stat">
+    <div class="swarm-num purple" id="statPeers">0</div>
+    <div class="swarm-lbl">Live Peers</div>
+  </div>
+  <div class="swarm-divider"></div>
+  <div class="swarm-stat">
+    <div class="swarm-num orange" id="statComputed">0</div>
+    <div class="swarm-lbl">Computed</div>
+  </div>
+  <div class="swarm-divider"></div>
+  <div class="swarm-stat">
+    <div class="swarm-num green" id="statTotal">20</div>
+    <div class="swarm-lbl">Total Symbols</div>
+  </div>
+  <div class="swarm-divider"></div>
+  <div class="swarm-stat">
+    <div class="swarm-num yellow" id="statBull">0</div>
+    <div class="swarm-lbl">Bullish</div>
+  </div>
+  <div class="swarm-divider"></div>
+  <div class="swarm-stat">
+    <div class="swarm-num" style="color:var(--red)" id="statBear">0</div>
+    <div class="swarm-lbl">Bearish</div>
+  </div>
+  <div class="swarm-divider"></div>
+  <div class="swarm-stat" style="margin-left:auto">
+    <div class="swarm-num" id="statStatus" style="font-size:13px;color:var(--muted)">Idle</div>
+    <div class="swarm-lbl">Swarm Status</div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Swarm visualization -->
+  <div class="swarm-viz">
+    <div class="section-head">
+      <div class="section-title">🕸 Live Swarm</div>
+      <div class="section-badge" id="swarmBadge">0 peers connected</div>
+      <div class="section-line"></div>
+      <div style="font-size:11px;color:var(--muted)">Each peer computes different symbols</div>
+    </div>
+    <div class="swarm-peers" id="swarmPeers">
+      <div style="color:var(--muted);font-size:12px;padding:20px">
+        👻 No peers yet — click "Join Swarm" to connect
+      </div>
+    </div>
+  </div>
+
+  <!-- Signal grid -->
+  <div class="section-head">
+    <div class="section-title">📡 Live Signals</div>
+    <div class="section-badge" id="signalBadge">0 signals</div>
+    <div class="section-line"></div>
+    <div style="font-size:11px;color:var(--muted)">Aggregated from all swarm peers</div>
+  </div>
+  <div class="signal-grid" id="signalGrid">
+    <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">
+      🧟 Join the swarm and start computing to see live signals
+    </div>
+  </div>
+
+  <!-- Activity log -->
+  <div class="section-head">
+    <div class="section-title">📋 Swarm Activity</div>
+    <div class="section-line"></div>
+  </div>
+  <div class="log-box" id="logBox"></div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ── Config ────────────────────────────────────────────────────────────────────
+const BRIDGE = 'http://127.0.0.1:5050';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let myPeerId   = null;
+let mySymbols  = [];
+let computing  = false;
+let pollTimer  = null;
+let hbTimer    = null;
+let computeTimer = null;
+
+// ── Ghost background ──────────────────────────────────────────────────────────
+(function spawnGhosts() {
+  const bg = document.getElementById('ghostBg');
+  const ghosts = ['👻','💀','🎃','🕷','🦇','☠️'];
+  for (let i = 0; i < 15; i++) {
+    const s = document.createElement('span');
+    s.textContent = ghosts[Math.floor(Math.random() * ghosts.length)];
+    s.style.left  = Math.random() * 100 + 'vw';
+    s.style.animationDuration = (8 + Math.random() * 20) + 's';
+    s.style.animationDelay    = -(Math.random() * 20) + 's';
+    s.style.fontSize = (1.5 + Math.random() * 2) + 'rem';
+    bg.appendChild(s);
+  }
+})();
+
+// ── Logging ───────────────────────────────────────────────────────────────────
+function log(msg, type = 'info') {
+  const box  = document.getElementById('logBox');
+  const time = new Date().toLocaleTimeString();
+  const div  = document.createElement('div');
+  div.className = 'log-line';
+  div.innerHTML = `<span class="log-time">${time}</span><span class="log-msg ${type}">${msg}</span>`;
+  box.insertBefore(div, box.firstChild);
+  if (box.children.length > 50) box.removeChild(box.lastChild);
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Join swarm ────────────────────────────────────────────────────────────────
+async function joinSwarm() {
+  try {
+    log('🔗 Joining swarm…', 'info');
+    const r = await fetch(`${BRIDGE}/api/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ peer_id: myPeerId || undefined }),
+    });
+    const d = await r.json();
+
+    myPeerId  = d.peer_id;
+    mySymbols = d.symbols || [];
+
+    document.getElementById('myPeerId').textContent  = myPeerId.slice(0, 20) + '…';
+    document.getElementById('myTask').textContent    = `Assigned: ${mySymbols.join(', ')}`;
+    document.getElementById('myDot').className       = 'peer-dot';
+
+    log(`✅ Joined as ${myPeerId}`, 'ok');
+    log(`📦 My symbols (${mySymbols.length}): ${mySymbols.join(', ')}`, 'info');
+    log(`👥 Total peers: ${d.total_peers} — symbols split equally`, 'info');
+    toast(`🔗 Peer ${myPeerId.slice(0,8)} — computing ${mySymbols.length} symbols`);
+
+    // Start heartbeat
+    if (hbTimer) clearInterval(hbTimer);
+    hbTimer = setInterval(heartbeat, 15000);
+
+    // Start polling dashboard every 2 seconds
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(pollSignals, 2000);
+    pollSignals();
+
+  } catch (e) {
+    log(`❌ Cannot connect to bridge: ${e.message}. Is bridge.py running on port 5050?`, 'err');
+    toast('❌ Bridge not running — start bridge.py first');
+  }
+}
+
+// ── Heartbeat ─────────────────────────────────────────────────────────────────
+async function heartbeat() {
+  if (!myPeerId) return;
+  try {
+    await fetch(`${BRIDGE}/api/heartbeat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ peer_id: myPeerId }),
+    });
+  } catch (e) {}
+}
+
+// ── Start computing ───────────────────────────────────────────────────────────
+async function startComputing() {
+  if (!myPeerId) { await joinSwarm(); }
+  if (!mySymbols.length) { toast('⚠ No symbols assigned yet'); return; }
+  if (computing) { toast('⚡ Already computing!'); return; }
+
+  computing = true;
+  document.getElementById('myDot').className = 'peer-dot computing';
+  document.getElementById('statStatus').textContent = '⚡ Computing';
+
+  log(`⚡ Starting computation for: ${mySymbols.join(', ')}`, 'info');
+  toast(`⚡ Computing ${mySymbols.length} symbols…`);
+
+  let idx = 0;
+
+  async function computeNext() {
+    if (idx >= mySymbols.length) {
+      computing = false;
+      document.getElementById('myDot').className = 'peer-dot';
+      document.getElementById('statStatus').textContent = '✅ Done';
+      log(`✅ Computation complete for all ${mySymbols.length} symbols`, 'ok');
+      toast('✅ All symbols computed!');
+      return;
+    }
+
+    const sym = mySymbols[idx++];
+    log(`📡 Computing ${sym}…`, 'info');
+    document.getElementById('myTask').textContent = `Computing: ${sym}`;
+    document.getElementById('myCount').textContent = idx;
+
+    try {
+      const r = await fetch(`${BRIDGE}/api/compute/${sym}`);
+      const d = await r.json();
+      log(`✓ ${sym}: ${d.bias?.toUpperCase() || 'N/A'} | ₹${d.price || 0} | RSI ${d.rsi?.toFixed(1) || '—'}`, 'ok');
+    } catch (e) {
+      log(`⚠ ${sym}: bridge error — ${e.message}`, 'warn');
+    }
+
+    // Small delay between symbols to avoid hammering the analysis server
+    setTimeout(computeNext, 800);
+  }
+
+  computeNext();
+}
+
+// ── Poll aggregated signals ───────────────────────────────────────────────────
+async function pollSignals() {
+  try {
+    const r = await fetch(`${BRIDGE}/api/signals`);
+    const d = await r.json();
+    if (d.signals && d.signals.length > 0) {
+      renderSignals(d.signals);
+    }
+    if (d.peers && d.peers.length > 0) {
+      renderPeers(d.peers);
+    }
+    updateStats(d);
+  } catch (e) {
+    // Bridge not running yet — silent
+  }
+}
+
+// ── Render signal cards ───────────────────────────────────────────────────────
+function renderSignals(signals) {
+  const grid = document.getElementById('signalGrid');
+  if (!signals.length) return;
+
+  document.getElementById('signalBadge').textContent = `${signals.length} signals`;
+
+  grid.innerHTML = signals.map(s => {
+    const bias   = (s.bias || 'neutral').toLowerCase();
+    const bClass = bias === 'bullish' ? 'bull' : bias === 'bearish' ? 'bear' : 'neutral';
+    const bLabel = bias === 'bullish' ? '🟢 Bullish' : bias === 'bearish' ? '🔴 Bearish' : '🟡 Neutral';
+    const price  = s.price ? `₹${Number(s.price).toLocaleString('en-IN', {minimumFractionDigits:2})}` : '—';
+
+    const rsiCls = s.rsi > 60 ? 'g' : s.rsi < 40 ? 'r' : '';
+    const stCls  = s.st_bull ? 'g' : 'r';
+    const volCls = s.vol > 1.3 ? 'g' : s.vol < 0.7 ? 'r' : '';
+
+    let tipHtml = '';
+    if (s.tip) {
+      const dirCls = s.tip.direction?.includes('BUY') ? 'buy' : 'sell';
+      tipHtml = `
+        <div class="sig-tip">
+          <div class="tip-dir ${dirCls}">${s.tip.direction} · ${s.tip.type} · ${s.tip.confidence || 50}%</div>
+          <div class="tip-levels">
+            <div class="tip-lv"><div class="tip-lv-lbl">Entry</div><div class="tip-lv-val e">${s.tip.entry || '—'}</div></div>
+            <div class="tip-lv"><div class="tip-lv-lbl">SL</div><div class="tip-lv-val s">${s.tip.sl || '—'}</div></div>
+            <div class="tip-lv"><div class="tip-lv-lbl">Target</div><div class="tip-lv-val t">${s.tip.target1 || '—'}</div></div>
+          </div>
+        </div>`;
+    }
+
+    return `
+      <div class="sig-card ${bClass}">
+        <div class="card-peer">peer</div>
+        <div class="sig-head">
+          <div>
+            <div class="sig-sym">${s.symbol}</div>
+          </div>
+          <div>
+            <div class="sig-price">${price}</div>
+          </div>
+        </div>
+        <div class="bias-pill ${bClass}">${bLabel}</div>
+        <div class="sig-inds">
+          ${s.rsi ? `<span class="ind-pill ${rsiCls}">RSI ${Number(s.rsi).toFixed(1)}</span>` : ''}
+          ${s.atr ? `<span class="ind-pill">ATR ${Number(s.atr).toFixed(1)}</span>` : ''}
+          ${s.vol ? `<span class="ind-pill ${volCls}">Vol ${Number(s.vol).toFixed(1)}x</span>` : ''}
+          ${s.st_bull !== undefined ? `<span class="ind-pill ${stCls}">ST ${s.st_bull ? '▲' : '▼'}</span>` : ''}
+        </div>
+        ${tipHtml}
+      </div>`;
+  }).join('');
+}
+
+// ── Render peer nodes — update computed count ─────────────────────────────────
+function renderPeers(peers) {
+  const container = document.getElementById('swarmPeers');
+  if (!peers.length) return;
+
+  const icons = ['👻','🧟','💀','🎃','🕷','🦇'];
+  const activePeers = peers.filter(p => p.active).length;
+  document.getElementById('swarmBadge').textContent = `${activePeers} peers connected`;
+
+  container.innerHTML = peers.map((p, i) => `
+    <div class="swarm-peer-node">
+      <div class="peer-icon">${icons[i % icons.length]}</div>
+      <div class="peer-node-id">${(p.id || '').slice(0,14)}</div>
+      <div class="peer-node-syms">${(p.symbols || []).slice(0,3).join(', ')}${(p.symbols?.length||0) > 3 ? ' +' + (p.symbols.length-3) : ''}</div>
+      <div class="peer-node-status ${p.active ? 'active' : 'idle'}">${p.active ? '⚡ Active' : '💤 Idle'}</div>
+      <div style="font-size:13px;font-weight:800;color:var(--green);margin-top:4px">${p.computed} ✓</div>
+    </div>`).join('');
+}
+
+// ── Update stats bar ──────────────────────────────────────────────────────────
+function updateStats(d) {
+  const signals = d.signals || [];
+  document.getElementById('statPeers').textContent    = d.peer_count || 0;
+  document.getElementById('statComputed').textContent = d.computed   || 0;
+  document.getElementById('statBull').textContent     = signals.filter(s => s.bias === 'bullish').length;
+  document.getElementById('statBear').textContent     = signals.filter(s => s.bias === 'bearish').length;
+}
+
+function clearSignals() {
+  document.getElementById('signalGrid').innerHTML =
+    '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">🧟 Signals cleared</div>';
+  document.getElementById('signalBadge').textContent = '0 signals';
+}
+
+// ── Auto-join on load ─────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  log('👻 TorrentSignals loaded — click "Join Swarm" to connect', 'info');
+  log('💡 Open multiple tabs to simulate a real swarm!', 'info');
+
+  // Generate a stable peer ID per tab
+  myPeerId = sessionStorage.getItem('ts_peer_id');
+  if (!myPeerId) {
+    myPeerId = 'peer_' + Math.random().toString(36).slice(2, 10);
+    sessionStorage.setItem('ts_peer_id', myPeerId);
+  }
+  document.getElementById('myPeerId').textContent = myPeerId;
+});
+</script>
+</body>
+</html>

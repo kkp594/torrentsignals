@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — StockIQ</title>
+<link rel="stylesheet" href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(48,54,61,.8);border-radius:4px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 20px;display:flex;align-items:center;gap:20px;height:52px}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:12px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent;text-decoration:none;white-space:nowrap}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.container{max-width:860px;margin:0 auto;padding:24px 20px}
+
+/* Provider Selector */
+.provider-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:0}
+.provider-card{background:#0D1117;border:2px solid #30363D;border-radius:10px;padding:16px;cursor:pointer;transition:all .2s;position:relative}
+.provider-card:hover{border-color:#58A6FF;background:#0D1520}
+.provider-card.selected{border-color:#58A6FF;background:#0D1520;box-shadow:0 0 0 1px #58A6FF}
+.provider-card.selected::after{content:'✓';position:absolute;top:10px;right:12px;color:#58A6FF;font-weight:700;font-size:13px}
+.provider-logo{font-size:22px;margin-bottom:8px}
+.provider-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.provider-desc{font-size:11px;color:#8B949E;line-height:1.5}
+.provider-status{font-size:10px;margin-top:8px;padding:2px 8px;border-radius:8px;display:inline-block;font-weight:600}
+.ps-ok  {background:#1A3A2A;color:#3FB950}
+.ps-warn{background:#2A2A1A;color:#E3B341}
+.ps-off {background:#21262D;color:#8B949E}
+
+/* Tabs */
+.tab-nav{display:flex;border-bottom:1px solid #30363D;margin-bottom:20px}
+.tab-nav .tn{padding:10px 18px;cursor:pointer;font-size:13px;color:#8B949E;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab-nav .tn.active{color:#58A6FF;border-bottom-color:#58A6FF}
+.tab-nav .tn:hover{color:#E6EDF3}
+.tab-pane{display:none}.tab-pane.active{display:block}
+
+/* Cards */
+.card{background:#161B22;border:1px solid #30363D;border-radius:8px;padding:20px;margin-bottom:14px}
+.card h2{font-size:13px;font-weight:600;color:#E6EDF3;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #30363D;display:flex;align-items:center;gap:8px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;color:#8B949E;margin-bottom:5px;font-weight:500}
+.field input,.field select{width:100%;background:#0D1117;border:1px solid #30363D;border-radius:6px;padding:8px 12px;color:#E6EDF3;font-size:13px;outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus{border-color:#58A6FF}
+.field input[type=password]{font-family:monospace;letter-spacing:1px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
+.btn-green{background:#238636;color:#fff}.btn-green:hover{background:#2ea043}
+.btn-blue {background:#1F6FEB;color:#fff}.btn-blue:hover{background:#388BFD}
+.btn-red  {background:#B91C1C;color:#fff}.btn-red:hover{background:#DC2626}
+.btn-ghost{background:#21262D;border:1px solid #30363D;color:#E6EDF3}.btn-ghost:hover{background:#30363D}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.status-box{margin-top:10px;font-size:12px;padding:8px 12px;border-radius:6px;display:none;line-height:1.5}
+.status-box.ok {background:#1A3A2A;color:#3FB950;display:block}
+.status-box.err{background:#3A1A1A;color:#F85149;display:block}
+.status-box.inf{background:#1A2A3A;color:#58A6FF;display:block}
+.info-box{background:#0D1117;border:1px solid #21262D;border-radius:6px;padding:12px;font-size:11px;color:#8B949E;line-height:1.8;margin-bottom:14px}
+.info-box a{color:#58A6FF}
+.info-box code{background:#21262D;padding:1px 5px;border-radius:3px;font-family:monospace}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-ok  {background:#1A3A2A;color:#3FB950}
+.badge-err {background:#3A1A1A;color:#F85149}
+.badge-warn{background:#2A2A1A;color:#E3B341}
+.badge-info{background:#1A2A3A;color:#58A6FF}
+
+/* Toggle */
+.toggle-row{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.toggle{position:relative;width:46px;height:24px;cursor:pointer;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#21262D;border-radius:24px;transition:.3s;border:1px solid #30363D}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:#8B949E;border-radius:50%;transition:.3s}
+.toggle input:checked+.toggle-slider{background:#1F6FEB;border-color:#1F6FEB}
+.toggle input:checked+.toggle-slider:before{transform:translateX(22px);background:#fff}
+
+/* Data source grid */
+.source-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #21262D;font-size:12px}
+.source-row:last-child{border-bottom:none}
+
+/* Profit Guard level cards */
+.level-card{background:#0D1117;border:2px solid #30363D;border-radius:8px;padding:14px 16px;cursor:pointer;transition:all .2s}
+.level-card:hover{border-color:#58A6FF}
+.level-card.selected{border-color:#E3B341;background:#1A1A0D}
+.level-header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.level-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px}
+.level-name{font-size:13px;font-weight:600;flex:1}
+.level-check{color:#E3B341;font-weight:700;font-size:14px}
+.level-desc{font-size:12px;color:#8B949E;line-height:1.6;margin:0}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="logo"><img src="img/logo.png"/> StockIQ</span>
+  <a href="/">Hub<!-- Dashboard --></a>
+  <a href="/screener.html">Scan<!-- Screener --></a>
+  <a href="/tips.html"><!-- 💡 -->Tips<!-- Tips --></a>
+  <a href="/chart.html">Chart<!-- Charts --></a>
+  <a href="/options.html">Opts<!-- Options --></a>
+  <a href="/heatmap.html">Map<!-- Heatmap --></a>
+  <a href="/alerts.html"><!-- 🔔 --> Alert<!-- Alters --></a>
+  <a href="/intel.html"><!-- 🧠 --> Algo<!-- Logic --></a>
+  <a href="/gap-scanner.html"><!-- 📈 --> Gap<!-- Gaps --></a>
+  <a href="/backtester.html"><!-- 🧪 --> Test<!-- Backtest --></a>
+  <a href="/briefing.html"><!-- 📋 --> Brief<!-- Briefing --></a>
+  <a href="/corp-actions.html">Corp</a>
+  <a href="/notes.html">Log<!-- Notes --></a>
+  <a href="/settings.html" class="active" style="margin-left:auto">⚙ Settings</a>
+</nav>
+
+<div class="container">
+
+  <!-- ── Provider Selector ─────────────────────────────────────────────────── -->
+  <div class="card" style="margin-bottom:20px">
+    <h2>🔌 Active Data Provider</h2>
+    <p style="font-size:12px;color:#8B949E;margin-bottom:14px">
+      Select your live data source. Provider is used for watchlist prices, quote panel and intraday charts during market hours.
+      yfinance is always used as fallback for historical OHLCV.
+    </p>
+    <div class="provider-grid" id="providerGrid">
+      <div class="provider-card" id="pc-auto" onclick="setProvider('auto')">
+        <div class="provider-logo">🤖</div>
+        <div class="provider-name">Auto</div>
+        <div class="provider-desc">Use Upstox if token present, Shoonya as backup, yfinance off-hours</div>
+        <span class="provider-status ps-ok" id="ps-auto">Recommended</span>
+      </div>
+      <div class="provider-card" id="pc-upstox" onclick="setProvider('upstox')">
+        <div class="provider-logo">⚡</div>
+        <div class="provider-name">Upstox</div>
+        <div class="provider-desc">REST API + WebSocket feed. Requires daily access token.</div>
+        <span class="provider-status ps-off" id="ps-upstox">Not configured</span>
+      </div>
+      <div class="provider-card" id="pc-shoonya" onclick="setProvider('shoonya')">
+        <div class="provider-logo">🦁</div>
+        <div class="provider-name">Shoonya (Finvasia)</div>
+        <div class="provider-desc">Finvasia API. Requires TOTP + API Key. Auto-login daily.</div>
+        <span class="provider-status ps-off" id="ps-shoonya">Not configured</span>
+      </div>
+    </div>
+    <div id="providerStatus" style="margin-top:12px"></div>
+  </div>
+
+  <!-- ── Tabs ─────────────────────────────────────────────────────────────── -->
+  <div class="tab-nav">
+    <div class="tn active" onclick="switchTab('upstox')">⚡ Upstox</div>
+    <div class="tn"        onclick="switchTab('shoonya')">🦁 Shoonya</div>
+    <div class="tn"        onclick="switchTab('general')">🎨 General</div>
+    <div class="tn"        onclick="switchTab('datasrc')">📊 Data Sources</div>
+    <div class="tn"        onclick="switchTab('guard')" style="color:#E3B341">🛡 Profit Guard</div>
+  </div>
+
+  <!-- ── UPSTOX TAB ─────────────────────────────────────────────────────────── -->
+  <div class="tab-pane active" id="tab-upstox">
+    <div class="card">
+      <h2>⚡ Upstox API Credentials</h2>
+      <div class="info-box">
+        <b>How to set up:</b><br>
+        1. Go to <a href="https://developer.upstox.com" target="_blank">developer.upstox.com</a> → Create App<br>
+        2. Set Redirect URL to <code>http://localhost:8765/callback</code><br>
+        3. Copy <b>API Key</b> and <b>Secret Key</b> → paste below → Save<br>
+        4. Each morning: get Daily Access Token from Upstox and paste below<br>
+        5. Token expires at midnight — paste fresh token next morning
+      </div>
+      <div id="upstoxStatus" style="margin-bottom:14px"></div>
+      <div class="field-row">
+        <div class="field">
+          <label>API Key (Client ID) <span id="credSavedBadge" class="badge badge-ok" style="display:none">✓ Saved</span></label>
+          <input type="password" id="clientId" placeholder="e.g. 5WBMVF" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Secret Key</label>
+          <input type="password" id="clientSecret" placeholder="Your client secret" autocomplete="off">
+        </div>
+      </div>
+      <div class="btn-row" style="margin-bottom:16px">
+        <button class="btn btn-green" onclick="saveCredentials()">Save Credentials</button>
+        <button class="btn btn-blue"  onclick="testConnection()">Test Connection</button>
+      </div>
+      <hr style="border-color:#30363D;margin-bottom:16px">
+      <div class="field">
+        <label>Daily Access Token <span style="font-size:10px;color:#484F58">(paste manually each morning)</span></label>
+        <input type="password" id="accessToken" placeholder="eyJ0eXAiOiJKV1Qi...">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-green"  onclick="saveToken()">Save Token</button>
+        <button class="btn btn-ghost"  onclick="clearToken()">Clear Token</button>
+        <button class="btn btn-blue"   onclick="restartFeed()">↺ Restart Feed</button>
+      </div>
+      <div id="tokenStatus" class="status-box"></div>
+    </div>
+  </div>
+
+  <!-- ── SHOONYA TAB ────────────────────────────────────────────────────────── -->
+  <div class="tab-pane" id="tab-shoonya">
+
+    <div id="shoonyaStatusBadge" style="margin-bottom:14px"></div>
+
+    <div class="card">
+      <h2>🦁 Shoonya (Finvasia) Credentials</h2>
+
+      <div class="info-box">
+        <b>Where to find your credentials (prism.shoonya.com):</b><br>
+        1. Go to <a href="https://prism.shoonya.com" target="_blank" style="color:#58A6FF">prism.shoonya.com</a> → log in → click <b>API Key</b> (top right)<br>
+        2. You will see:<br>
+        &nbsp;&nbsp;• <b>Client Id</b> (e.g. <code>FA107850_U</code>) → paste into <b>Client Id</b> below<br>
+        &nbsp;&nbsp;• <b>Secret Code</b> (long key) → paste into <b>Secret Code</b> below<br>
+        3. <b>URL / IP Address fields</b> in PRISM → leave <b>blank</b>, not needed<br>
+        4. <b>MPIN</b> = the PIN you use in the Shoonya mobile app (usually 4–6 digits)
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>User ID</label>
+          <input type="text" id="sh_uid" placeholder="e.g. FA107850" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Client Id <span style="font-size:10px;color:#8B949E">(from PRISM API page)</span></label>
+          <input type="text" id="sh_vc" placeholder="e.g. FA107850_U" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Password <span style="font-size:10px;color:#8B949E">(your Shoonya login password)</span></label>
+        <div style="display:flex;gap:6px">
+          <input type="password" id="sh_pwd" placeholder="Your login password" autocomplete="off" style="flex:1">
+          <button class="btn btn-ghost" style="padding:6px 10px" onclick="toggleVis('sh_pwd',this)">👁</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Secret Code <span style="font-size:10px;color:#E3B341">★ copy from PRISM → API Key page</span></label>
+        <div style="display:flex;gap:6px">
+          <input type="password" id="sh_api_key" placeholder="Paste Secret Code from prism.shoonya.com" autocomplete="off" style="flex:1">
+          <button class="btn btn-ghost" style="padding:6px 10px" onclick="toggleVis('sh_api_key',this)">👁</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>MPIN <span style="font-size:10px;color:#8B949E">(your Shoonya app PIN, 4–6 digits)</span></label>
+        <div style="display:flex;gap:6px">
+          <input type="password" id="sh_factor2" placeholder="e.g. 215321" autocomplete="off" style="flex:1" oninput="updateFactor2Hint()">
+          <button class="btn btn-ghost" style="padding:6px 10px" onclick="toggleVis('sh_factor2',this)">👁</button>
+        </div>
+        <div style="font-size:11px;margin-top:4px" id="sh_factor2_hint"></div>
+      </div>
+      <!-- hidden imei — sent as fixed value, user doesn't need to see it -->
+      <input type="hidden" id="sh_imei" value="abc1234567890123">
+
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-green" onclick="saveShoonyaConfig()">💾 Save</button>
+        <button class="btn btn-blue"  onclick="shoonyaLogin()">🔑 Login to Shoonya</button>
+        <button class="btn btn-ghost" onclick="testShoonya()">🧪 Test</button>
+        <button class="btn btn-ghost" onclick="testShoonyaPositions()">📊 Positions</button>
+      </div>
+      <div id="shoonyaConfigStatus" class="status-box"></div>
+      <div id="shoonyaStatus" class="status-box" style="margin-top:6px"></div>
+    </div>
+
+  </div>
+
+  <!-- ── GENERAL TAB ────────────────────────────────────────────────────────── -->
+  <div class="tab-pane" id="tab-general">
+    <div class="card">
+      <h2>🎨 Appearance</h2>
+      <div class="toggle-row">
+        <label class="toggle">
+          <input type="checkbox" id="themeToggle" checked onchange="toggleTheme(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span style="font-size:13px">Dark Mode</span>
+        <span id="themeLabel" style="font-size:12px;color:#8B949E">Dark</span>
+      </div>
+      <p style="font-size:11px;color:#8B949E;margin-top:8px">Light mode applies a lighter background across all pages. Saved in browser.</p>
+    </div>
+
+    <div class="card">
+      <h2>🔔 Alert Settings</h2>
+      <div class="toggle-row">
+        <label class="toggle">
+          <input type="checkbox" id="alertDesktop" onchange="toggleDesktopAlerts(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span style="font-size:13px">Desktop Notifications</span>
+        <span id="notifPermLabel" style="font-size:11px;color:#8B949E"></span>
+      </div>
+      <p style="font-size:11px;color:#8B949E;margin-top:8px">When enabled, alerts fire as browser desktop notifications even when tab is in background.</p>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-ghost" onclick="testDesktopNotif()">Test Notification</button>
+        <a href="/alerts.html" class="btn btn-blue" style="text-decoration:none;display:inline-block">Manage Alerts →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DATA SOURCES TAB ──────────────────────────────────────────────────── -->
+  <div class="tab-pane" id="tab-datasrc">
+    <div class="card">
+      <h2>📊 Live Data Sources</h2>
+      <div id="dataSourceInfo"><div style="color:#8B949E">Loading...</div></div>
+    </div>
+
+    <!-- Symbol Validator -->
+    <div class="card">
+      <h2>🔍 Symbol Validator</h2>
+      <p style="font-size:12px;color:#8B949E;margin-bottom:12px">
+        Check if a symbol exists on NSE or BSE before adding it to stocks.csv.
+        Also shows the correct yfinance ticker and current price.
+      </p>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+        <div class="field" style="flex:1;min-width:160px;margin-bottom:0">
+          <label>Symbol to check</label>
+          <input type="text" id="valSymInput" placeholder="e.g. MTARTECH, ANANTRAJ"
+            oninput="this.value=this.value.toUpperCase()"
+            onkeydown="if(event.key==='Enter') validateSymbol()">
+        </div>
+        <button class="btn btn-blue" onclick="validateSymbol()" style="margin-bottom:0">Check Symbol</button>
+      </div>
+      <div id="valResult" class="status-box" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <h2>💾 Cache</h2>
+      <p style="font-size:12px;color:#8B949E;margin-bottom:14px">
+        yfinance OHLCV data is cached for 15 minutes in <code style="background:#0D1117;padding:2px 6px;border-radius:3px">D:\sApp\analysis\cache\</code>.
+        Clear if prices look stale.
+      </p>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="clearCache()">Clear OHLCV Cache</button>
+      </div>
+      <div id="cacheStatus" class="status-box"></div>
+    </div>
+
+    <!-- stocks.csv guide -->
+    <div class="card">
+      <h2>📋 stocks.csv Format Guide</h2>
+      <div style="font-size:12px;color:#8B949E;line-height:2">
+        <p>Location: <code style="background:#0D1117;padding:2px 6px;border-radius:3px">D:\sApp\assets\stocks.csv</code></p>
+        <p style="margin-top:8px"><b>Supported columns:</b></p>
+        <p><code style="background:#0D1117;padding:1px 5px;border-radius:3px">SYMBOL</code> — Stock symbol (required). Use NSE symbol by default.</p>
+        <p><code style="background:#0D1117;padding:1px 5px;border-radius:3px">EXCHANGE</code> — Optional. Set to <code style="background:#0D1117;padding:1px 5px;border-radius:3px">BSE</code> for BSE-only stocks, leave blank for NSE.</p>
+        <p style="margin-top:8px"><b>Example:</b></p>
+        <pre style="background:#0D1117;padding:10px;border-radius:6px;font-size:11px;overflow-x:auto">SYMBOL,EXCHANGE
+RELIANCE,NSE
+HDFCBANK,NSE
+ANANTRAJ,NSE
+MTARTECH,NSE
+SOMEBSESTOCK,BSE</pre>
+        <p style="margin-top:8px;color:#484F58">
+          If EXCHANGE column is missing, NSE is assumed. The app auto-tries BSE (.BO) if NSE has no data.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PROFIT GUARD TAB ──────────────────────────────────────────────────── -->
+  <div class="tab-pane" id="tab-guard">
+
+    <!-- Current Status Banner -->
+    <div id="guardStatusBanner" style="margin-bottom:14px"></div>
+
+    <!-- Master Toggle -->
+    <div class="card">
+      <h2>🛡 Daily Profit Guard</h2>
+      <div class="info-box" style="border-left:3px solid #E3B341;padding-left:14px">
+        <b>Why this feature?</b><br>
+        You earn good profits early in the session, then give them all back due to greed or overtrading.
+        Profit Guard stops that cycle. Once your daily target is reached, it intervenes — soft warning,
+        cooling-off period, or hard lock — so you walk away with the money you made.
+      </div>
+
+      <div class="toggle-row" style="margin-bottom:14px">
+        <label class="toggle">
+          <input type="checkbox" id="guardEnabled" onchange="guardToggle(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <div>
+          <div style="font-size:13px;font-weight:600" id="guardEnabledLabel">Disabled</div>
+          <div style="font-size:11px;color:#8B949E">Enable daily profit target protection</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Daily Profit Target (₹)</label>
+        <input type="number" id="guardTarget" placeholder="e.g. 2000" min="100" step="100"
+               style="max-width:200px">
+        <div style="font-size:11px;color:#8B949E;margin-top:4px">
+          Guard activates when your realised P&L reaches or exceeds this amount
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-green" onclick="saveGuardSettings()">💾 Save Settings</button>
+        <button class="btn btn-ghost" onclick="resetGuardToday()">↺ Reset Today's Lock</button>
+      </div>
+      <div id="guardSaveStatus" class="status-box"></div>
+    </div>
+
+    <!-- Protection Level -->
+    <div class="card">
+      <h2>⚙ Protection Level</h2>
+      <p style="font-size:12px;color:#8B949E;margin-bottom:16px">
+        Choose how aggressively to protect your profits when the daily target is reached.
+        All levels are completely optional and can be changed anytime.
+      </p>
+
+      <div style="display:flex;flex-direction:column;gap:10px" id="levelCards">
+
+        <div class="level-card" id="lc-1" onclick="selectLevel(1)">
+          <div class="level-header">
+            <span class="level-badge" style="background:#1A3A2A;color:#3FB950">Level 1</span>
+            <span class="level-name">Soft Warning</span>
+            <span class="level-check" id="lcheck-1" style="display:none">✓</span>
+          </div>
+          <p class="level-desc">
+            Displays a full-screen warning overlay with your daily stats and motivational message.
+            You can still choose to continue — but you have to consciously acknowledge the risk.
+          </p>
+        </div>
+
+        <div class="level-card" id="lc-2" onclick="selectLevel(2)">
+          <div class="level-header">
+            <span class="level-badge" style="background:#2A2A1A;color:#E3B341">Level 2</span>
+            <span class="level-name">Cooling-Off Mode</span>
+            <span class="level-check" id="lcheck-2" style="display:none">✓</span>
+          </div>
+          <p class="level-desc">
+            Blocks new trade entry for a mandatory cooling-off period. After the timer expires
+            you can resume, but you'll see the warning first.
+          </p>
+          <div class="field" style="margin-top:10px" onclick="event.stopPropagation()">
+            <label>Cooling-Off Duration</label>
+            <select id="guardCooldown" style="max-width:160px">
+              <option value="15">15 minutes</option>
+              <option value="30" selected>30 minutes</option>
+              <option value="60">60 minutes</option>
+              <option value="120">2 hours</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="level-card" id="lc-3" onclick="selectLevel(3)">
+          <div class="level-header">
+            <span class="level-badge" style="background:#3A1A1A;color:#F85149">Level 3</span>
+            <span class="level-name">Hard Lock</span>
+            <span class="level-check" id="lcheck-3" style="display:none">✓</span>
+          </div>
+          <p class="level-desc">
+            Prevents any new positions until you manually unlock by clicking the confirmation
+            button the required number of times — making you deliberately acknowledge the risk.
+          </p>
+          <div class="field" style="margin-top:10px" onclick="event.stopPropagation()">
+            <label>Unlock Confirmation Clicks Required</label>
+            <select id="guardUnlockClicks" style="max-width:160px">
+              <option value="2">2 clicks</option>
+              <option value="3" selected>3 clicks</option>
+              <option value="5">5 clicks</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="card">
+      <h2>ℹ How It Works</h2>
+      <div style="font-size:12px;color:#8B949E;line-height:2">
+        <p>1. Set your <b>daily profit target</b> (e.g. ₹2,000) and choose a <b>protection level</b>.</p>
+        <p>2. In your <b>Pro Trading Terminal</b> app, the guard checks your realised P&L automatically.</p>
+        <p>3. When the target is reached, the guard fires:</p>
+        <p style="padding-left:16px">
+          <b>Level 1:</b> Full-screen overlay with statistics and choices — Stop, Take a Break, or Continue.<br>
+          <b>Level 2:</b> Same overlay + trading is blocked for your chosen cooldown period.<br>
+          <b>Level 3:</b> Same overlay + hard lock requiring multiple deliberate unlock clicks.
+        </p>
+        <p>4. Lock state automatically resets at midnight for the next trading day.</p>
+        <p>5. You can always use <b>↺ Reset Today's Lock</b> above if needed.</p>
+      </div>
+    </div>
+
+  </div><!-- /tab-guard -->
+
+</div>
+
+<script>
+const API = "";
+let _provider = "auto";
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(function(){
+  // Theme
+  const css = localStorage.getItem('theme_css');
+  if(css){ const s=document.createElement('style'); s.textContent=css; document.head.appendChild(s); }
+  const isDark = (localStorage.getItem('theme')||'dark') === 'dark';
+  document.getElementById('themeToggle').checked = isDark;
+  document.getElementById('themeLabel').textContent = isDark ? 'Dark' : 'Light';
+
+  // Desktop notif permission
+  updateNotifLabel();
+  if(localStorage.getItem('desktop_alerts')==='true' && Notification.permission==='granted'){
+    document.getElementById('alertDesktop').checked = true;
+  }
+})();
+
+loadProviderStatus();
+loadUpstoxStatus();
+loadShoonyaStatus();
+loadDataInfo();
+// Auto-load guard tab if hash is present
+if(location.hash === '#guard') switchTab('guard');
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(name){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  const tabOrder = ['upstox','shoonya','general','datasrc','guard'];
+  document.querySelectorAll('.tn').forEach((t,i)=>{
+    t.classList.toggle('active', tabOrder[i]===name);
+  });
+  document.getElementById(`tab-${name}`).classList.add('active');
+  if(name==='guard') loadGuardSettings();
+}
+
+// ── Provider ──────────────────────────────────────────────────────────────────
+async function loadProviderStatus(){
+  try{
+    const r = await fetch(`${API}/api/provider`);
+    const d = await r.json();
+    _provider = d.provider;
+    updateProviderUI(d);
+  }catch(e){}
+}
+
+function updateProviderUI(d){
+  ['auto','upstox','shoonya'].forEach(p=>{
+    const card = document.getElementById(`pc-${p}`);
+    if(card) card.classList.toggle('selected', p === d.provider);
+  });
+  // Status badges
+  const ups = document.getElementById('ps-upstox');
+  const sho = document.getElementById('ps-shoonya');
+  if(ups){
+    if(d.upstox_ready){ ups.textContent='✓ Ready'; ups.className='provider-status ps-ok'; }
+    else { ups.textContent='No token'; ups.className='provider-status ps-warn'; }
+  }
+  if(sho){
+    if(d.shoonya_ready){ sho.textContent='✓ Ready'; sho.className='provider-status ps-ok'; }
+    else { sho.textContent='Not configured'; sho.className='provider-status ps-off'; }
+  }
+  const prov = document.getElementById('providerStatus');
+  const names = {auto:'Auto (recommended)', upstox:'Upstox', shoonya:'Shoonya'};
+  prov.innerHTML = `<span style="font-size:12px;color:#8B949E">Active: </span>
+    <span class="badge badge-info">${names[d.provider]||d.provider}</span>`;
+}
+
+async function setProvider(p){
+  try{
+    await fetch(`${API}/api/provider`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({provider: p})
+    });
+    const r = await fetch(`${API}/api/provider`);
+    updateProviderUI(await r.json());
+  }catch(e){}
+}
+
+// ── Upstox ────────────────────────────────────────────────────────────────────
+async function loadUpstoxStatus(){
+  try{
+    const r = await fetch(`${API}/api/upstox/status`);
+    const d = await r.json();
+    const el = document.getElementById('upstoxStatus');
+    const tok = document.getElementById('accessToken');
+    if(d.has_token){
+      el.innerHTML = `<span class="badge badge-ok">✓ Token Configured</span>
+        <span style="font-size:11px;color:#8B949E;margin-left:8px">${d.source||'token file'}</span>`;
+      tok.placeholder = '••••••••••••• (configured — paste new to replace)';
+    } else {
+      el.innerHTML = `<span class="badge badge-warn">⚠ No Token</span>
+        <span style="font-size:11px;color:#8B949E;margin-left:8px">Live data will use yfinance fallback</span>`;
+    }
+    if(d.client_id){
+      const ci = document.getElementById('clientId');
+      ci.placeholder = `${d.client_id.slice(0,3)}••••• (saved)`;
+      document.getElementById('credSavedBadge').style.display = 'inline-block';
+    }
+  }catch(e){}
+}
+
+async function saveCredentials(){
+  const cid = document.getElementById('clientId').value.trim();
+  const sec = document.getElementById('clientSecret').value.trim();
+  if(!cid){ showUpstoxStatus('Enter API Key', false); return; }
+  try{
+    const r = await fetch(`${API}/api/upstox/credentials`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({client_id:cid, client_secret:sec})
+    });
+    const d = await r.json();
+    if(d.success){
+      document.getElementById('clientId').value = '';
+      document.getElementById('clientId').placeholder = `${cid.slice(0,3)}••••• (saved)`;
+      document.getElementById('clientSecret').value = '';
+      document.getElementById('credSavedBadge').style.display = 'inline-block';
+      showUpstoxStatus('✓ Credentials saved', true);
+      loadProviderStatus();
+    } else { showUpstoxStatus(d.error, false); }
+  }catch(e){ showUpstoxStatus('Error: '+e.message, false); }
+}
+
+async function saveToken(){
+  const tok = document.getElementById('accessToken').value.trim();
+  if(!tok){ showUpstoxStatus('Enter access token', false); return; }
+  try{
+    const r = await fetch(`${API}/api/upstox/token`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({access_token:tok})
+    });
+    const d = await r.json();
+    if(d.success){
+      document.getElementById('accessToken').value = '';
+      document.getElementById('accessToken').placeholder = '••••••••••••• (configured)';
+      showUpstoxStatus('✓ Token saved — restarting feed...', true);
+      fetch(`${API}/api/stream/restart`,{method:'POST'}).then(r=>r.json()).then(d2=>{
+        showUpstoxStatus(d2.success?`✓ Feed active (${d2.symbols||'?'} symbols)`:'✓ Token saved', true);
+      }).catch(()=>showUpstoxStatus('✓ Token saved', true));
+      loadUpstoxStatus(); loadProviderStatus();
+    } else { showUpstoxStatus(d.error, false); }
+  }catch(e){ showUpstoxStatus('Error: '+e.message, false); }
+}
+
+async function clearToken(){
+  if(!confirm('Clear Upstox token?')) return;
+  const r = await fetch(`${API}/api/upstox/token`,{method:'DELETE'});
+  const d = await r.json();
+  showUpstoxStatus(d.success?'Token cleared':'Error', d.success);
+  loadUpstoxStatus(); loadProviderStatus();
+}
+
+async function testConnection(){
+  showUpstoxStatus('Testing...', null);
+  try{
+    const r = await fetch(`${API}/api/upstox/test`);
+    const d = await r.json();
+    if(d.success) showUpstoxStatus(`✓ Connected — NIFTY: ₹${d.price||'—'}`, true);
+    else showUpstoxStatus(`✗ ${d.error}`, false);
+  }catch(e){ showUpstoxStatus('Error: '+e.message, false); }
+}
+
+async function restartFeed(){
+  showUpstoxStatus('Restarting feed...', null);
+  try{
+    const r = await fetch(`${API}/api/stream/restart`,{method:'POST'});
+    const d = await r.json();
+    showUpstoxStatus(d.success?`✓ Feed restarted (${d.symbols||'?'} symbols)`:`✗ ${d.error}`, d.success);
+  }catch(e){ showUpstoxStatus('Error: '+e.message, false); }
+}
+
+function showUpstoxStatus(msg, ok){
+  const el = document.getElementById('tokenStatus');
+  el.textContent = msg;
+  el.className = 'status-box ' + (ok===true?'ok':ok===false?'err':'inf');
+}
+
+// ── Shoonya ───────────────────────────────────────────────────────────────────
+
+async function loadShoonyaStatus(){
+  // Fetch status and config independently — don't let one failure kill the other
+  let status = {}, cfg = {};
+  try{
+    const r = await fetch(`${API}/api/shoonya/status`);
+    if(r.ok) status = await r.json();
+  }catch(e){ console.warn('[shoonya] status fetch failed:', e.message); }
+
+  try{
+    const r = await fetch(`${API}/api/shoonya/config/get`);
+    if(r.ok) cfg = await r.json();
+    else if(r.status === 404){
+      // Route not yet available — server needs restart after code update
+      cfg = { _needs_restart: true };
+    }
+  }catch(e){ console.warn('[shoonya] config/get fetch failed:', e.message); }
+
+  const el = document.getElementById('shoonyaStatusBadge');
+  if(!el) return;
+
+  // Show restart hint if new route not found
+  if(cfg._needs_restart){
+    el.innerHTML = `<span class="badge badge-warn">⚠ Restart server to apply update</span>
+      <span style="font-size:11px;color:#E3B341;margin-left:8px">Run: python server.py</span>`;
+    document.getElementById('sh-current-display').innerHTML =
+      `<span style="color:#E3B341">⚠ New route not available yet — please restart the analysis server (python server.py) then refresh this page.</span>`;
+    return;
+  }
+
+  // Status badge
+  if(!status || !status.configured){
+    el.innerHTML = `<span class="badge badge-warn">⚠ Not Configured</span>
+      <span style="font-size:11px;color:#8B949E;margin-left:8px">Fill in credentials below</span>`;
+  } else if(!status.sdk_loaded){
+    el.innerHTML = `<span class="badge badge-err">✗ SDK not found</span>
+      <span style="font-size:11px;color:#F85149;margin-left:8px">NorenRestApiPy missing from D:/ShoonyaApi</span>`;
+  } else if(status.has_token){
+    el.innerHTML = `<span class="badge badge-ok">✓ Logged In</span>
+      <span style="font-size:11px;color:#8B949E;margin-left:8px">uid: ${status.uid} — session active</span>`;
+  } else {
+    el.innerHTML = `<span class="badge badge-warn">⚠ Config saved — not logged in yet</span>
+      <span style="font-size:11px;color:#8B949E;margin-left:8px">uid: ${status.uid||'?'}</span>`;
+  }
+
+  // Render current config display
+  renderShoonyaCurrentConfig(cfg);
+
+  // Pre-fill form fields with saved values
+  if(cfg.uid)  { const e=document.getElementById('sh_uid');  if(e&&!e.value) e.value=cfg.uid; }
+  if(cfg.vc)   { const e=document.getElementById('sh_vc');   if(e&&!e.value) e.value=cfg.vc;  }
+  if(cfg.factor2){ const e=document.getElementById('sh_factor2'); if(e&&!e.value) e.value=cfg.factor2; updateFactor2Hint(); }
+  if(cfg.api_key){ const e=document.getElementById('sh_api_key');
+    if(e&&!e.value) e.placeholder=cfg.api_key.slice(0,6)+'•••••••••••••••••••••••••• (saved — paste to replace)'; }
+  if(cfg.has_pwd){ const e=document.getElementById('sh_pwd');
+    if(e&&!e.value) e.placeholder='(saved — type to change)'; }
+
+  loadProviderStatus();
+}
+
+function renderShoonyaCurrentConfig(cfg){
+  const el = document.getElementById('sh-current-display');
+  if(!el) return;
+  if(!cfg || cfg._needs_restart) return;
+  if(cfg.error){
+    el.innerHTML = `<span style="color:#F85149">Could not load config: ${cfg.error}</span>`;
+    return;
+  }
+  if(!cfg.uid && !cfg.api_key && !cfg.has_pwd){
+    el.innerHTML = `<span style="color:#8B949E">No credentials saved yet — click ✏ Edit to add them.</span>`;
+    return;
+  }
+
+  const ok = v => v ? `<span style="color:#3FB950">✓</span>` : `<span style="color:#F85149">✗ missing</span>`;
+  const f2 = (cfg.factor2 || '').trim();
+  let f2type = '<span style="color:#F85149">not set</span>';
+  if(f2){
+    const isBase32 = /^[A-Z2-7]+=*$/i.test(f2.replace(/ /g,'')) && f2.length > 8;
+    const isDigits = /^\d{4,8}$/.test(f2);
+    if(isBase32)   f2type = '🔑 Base32 TOTP secret (auto-OTP) ✅';
+    else if(isDigits) f2type = '🔢 Static PIN / DOB';
+    else           f2type = '❓ Unknown format — verify';
+  }
+  const f2display = f2 ? (f2.slice(0,4) + '•'.repeat(Math.max(0, f2.length-4))) : '—';
+
+  el.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <tr><td style="padding:5px 8px;color:#8B949E;width:120px">User ID</td>
+          <td><b style="color:#E6EDF3">${cfg.uid||'—'}</b> ${ok(cfg.uid)}</td></tr>
+      <tr><td style="padding:5px 8px;color:#8B949E">Password</td>
+          <td>${cfg.has_pwd ? '<span style="color:#3FB950">✓ set</span>' : '<span style="color:#F85149">✗ not set — click Edit</span>'}</td></tr>
+      <tr><td style="padding:5px 8px;color:#8B949E">API Key</td>
+          <td style="font-family:monospace">${cfg.api_key||'<span style="color:#F85149">not set</span>'} ${ok(cfg.api_key)}</td></tr>
+      <tr><td style="padding:5px 8px;color:#8B949E">Vendor Code</td>
+          <td>${cfg.vc||'—'} ${ok(cfg.vc)}</td></tr>
+      <tr><td style="padding:5px 8px;color:#8B949E">factor2</td>
+          <td style="font-family:monospace">${f2display}
+            &nbsp;<span style="color:#8B949E;font-size:11px">${f2type}</span></td></tr>
+      <tr><td style="padding:5px 8px;color:#8B949E">IMEI</td>
+          <td>${cfg.imei||'—'}</td></tr>
+    </table>`;
+}
+
+function loadShoonyaConfigIntoForm(){
+  document.getElementById('sh-current-card').style.display = 'none';
+  document.getElementById('sh-edit-card').style.display = 'block';
+  // Pre-fill non-sensitive fields
+  fetch(`${API}/api/shoonya/config/get`).then(r=>r.json()).then(cfg=>{
+    if(cfg.uid)   document.getElementById('sh_uid').value  = cfg.uid;
+    if(cfg.vc)    document.getElementById('sh_vc').value   = cfg.vc;
+    if(cfg.imei)  document.getElementById('sh_imei').value = cfg.imei;
+    // For sensitive fields, just show placeholder indicating they're saved
+    if(cfg.has_pwd)    document.getElementById('sh_pwd').placeholder    = '(saved — type new password to change)';
+    if(cfg.api_key)    document.getElementById('sh_api_key').placeholder = cfg.api_key.slice(0,6)+'•••••••••••••••••••••••••• (saved)';
+    if(cfg.factor2)    document.getElementById('sh_factor2').placeholder = cfg.factor2.slice(0,4)+'•••• (saved — type to replace)';
+    updateFactor2Hint();
+  }).catch(()=>{});
+}
+
+function cancelShoonyaEdit(){
+  document.getElementById('sh-edit-card').style.display = 'none';
+  document.getElementById('sh-current-card').style.display = 'block';
+  document.getElementById('shoonyaConfigStatus').className = 'status-box';
+}
+
+function toggleVis(id, btn){
+  const el = document.getElementById(id);
+  if(el.type === 'password'){ el.type='text'; btn.textContent='🙈'; }
+  else { el.type='password'; btn.textContent='👁'; }
+}
+
+function updateFactor2Hint(){
+  const v = document.getElementById('sh_factor2').value.trim();
+  const hint = document.getElementById('sh_factor2_hint');
+  if(!v){ hint.textContent=''; return; }
+  if(/^[A-Z2-7]+=*$/i.test(v.replace(/ /g,'')) && v.length > 8){
+    hint.innerHTML = '✅ Looks like a <b>base32 TOTP secret</b> — OTP will be auto-generated each login';
+    hint.style.color = '#3FB950';
+  } else if(/^\d{4,8}$/.test(v)){
+    hint.innerHTML = '🔢 Looks like a <b>static PIN / DOB</b> — will be sent as-is';
+    hint.style.color = '#E3B341';
+  } else {
+    hint.innerHTML = '❓ Unrecognised format — double check';
+    hint.style.color = '#F85149';
+  }
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  const f2 = document.getElementById('sh_factor2');
+  if(f2) f2.addEventListener('input', updateFactor2Hint);
+});
+
+async function saveShoonyaConfig(){
+  const body = {};
+  const uid  = document.getElementById('sh_uid').value.trim();
+  const vc   = document.getElementById('sh_vc').value.trim();
+  const pwd  = document.getElementById('sh_pwd').value.trim();
+  const key  = document.getElementById('sh_api_key').value.trim();
+  const f2   = document.getElementById('sh_factor2').value.trim();
+  const imei = document.getElementById('sh_imei')?.value?.trim() || 'abc1234567890123';
+
+  if(uid)  body.uid     = uid;
+  if(vc)   body.vc      = vc;
+  if(pwd)  body.pwd     = pwd;
+  if(key)  body.api_key = key;
+  if(f2)   body.factor2 = f2;
+  if(imei) body.imei    = imei;
+
+  if(!body.uid && !body.api_key && !body.pwd && !body.factor2 && !body.vc){
+    showShoonyaConfigStatus('Nothing entered — fill in at least one field', false); return;
+  }
+  try{
+    const r = await fetch(`${API}/api/shoonya/config`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if(d.success){
+      showShoonyaConfigStatus('✓ Config saved', true);
+      // Update placeholder to confirm secret code was saved
+      if(key){
+        document.getElementById('sh_api_key').value='';
+        document.getElementById('sh_api_key').placeholder=key.slice(0,6)+'•••••••••••••••••••••••••• (saved)';
+      }
+      if(pwd){
+        document.getElementById('sh_pwd').value='';
+        document.getElementById('sh_pwd').placeholder='(saved — type to change)';
+      }
+      loadShoonyaStatus();
+      setTimeout(()=>{ document.getElementById('shoonyaConfigStatus').className='status-box'; }, 3000);
+    } else { showShoonyaConfigStatus('✗ '+(d.error||'Failed'), false); }
+  }catch(e){ showShoonyaConfigStatus('Error: '+e.message, false); }
+}
+
+function showShoonyaConfigStatus(msg, ok){
+  const el = document.getElementById('shoonyaConfigStatus');
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'status-box '+(ok===true?'ok':ok===false?'err':'inf');
+}
+
+async function shoonyaLogin(){
+  showShoonyaStatus('Logging in to Shoonya...', null);
+  try{
+    const r = await fetch(`${API}/api/shoonya/login`,{method:'POST'});
+    const d = await r.json();
+    if(d.success){
+      showShoonyaStatus('✓ Logged in — token active for this trading day', true);
+      loadShoonyaStatus(); loadProviderStatus();
+    } else {
+      let msg = d.error || 'Login failed';
+      let hint = '';
+      const e = (msg||'').toLowerCase();
+
+      if(e.includes('invalid access type'))
+        hint = '⚠️ Your Shoonya account does not have API access enabled, OR the API Key has expired.<br>'
+             + '→ Go to <a href="https://prism.shoonya.com" target="_blank" style="color:#58A6FF">prism.shoonya.com</a> → API Key → Generate a new key → paste it in Edit above.';
+      else if(e.includes('invalid vendor'))
+        hint = '⚠️ Vendor Code is wrong. It is usually your User ID + "_U" e.g. <code>FA107850_U</code>';
+      else if(e.includes('502') || e.includes('empty') || e.includes('expecting value') || e.includes('rejected'))
+        hint = '⚠️ Shoonya API backend rejected the request (502). Most likely: API Key is expired or wrong.<br>'
+             + '→ Regenerate your API key at <a href="https://prism.shoonya.com" target="_blank" style="color:#58A6FF">prism.shoonya.com</a> → API Key section.';
+      else if(e.includes('totp') || e.includes('factor'))
+        hint = '⚠️ factor2 is wrong. Use your MPIN (set in Shoonya app) or base32 TOTP secret from authenticator.';
+      else if(e.includes('password') || e.includes('credential') || e.includes('invalid') || e.includes('wrong'))
+        hint = '⚠️ Wrong password or User ID.';
+      else if(e.includes('sdk') || e.includes('norenrestapi'))
+        hint = '⚠️ SDK missing at D:/ShoonyaApi — check that folder exists.';
+
+      const statusEl = document.getElementById('shoonyaStatus');
+      statusEl.innerHTML = `<b>✗ Login failed</b><br><span style="font-size:12px;opacity:.9">${msg}</span>`
+        + (hint ? `<br><br><span style="font-size:12px;line-height:1.7">${hint}</span>` : '');
+      statusEl.className = 'status-box err';
+    }
+  }catch(e){ showShoonyaStatus('Server error: '+e.message, false); }
+}
+
+async function testShoonya(){
+  showShoonyaStatus('Testing live price feed...', null);
+  try{
+    const r = await fetch(`${API}/api/ltp`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({symbols:['RELIANCE']})
+    });
+    const d = await r.json();
+    const q = d.RELIANCE;
+    if(q && q.price) showShoonyaStatus(`✓ Live feed OK — RELIANCE: ₹${q.price} (source: ${q.source})`, true);
+    else showShoonyaStatus('No price returned — login first and retry during market hours', false);
+  }catch(e){ showShoonyaStatus('Error: '+e.message, false); }
+}
+
+async function testShoonyaPositions(){
+  showShoonyaStatus('Fetching positions from Shoonya...', null);
+  try{
+    const r = await fetch(`${API}/api/shoonya/positions`);
+    const d = await r.json();
+    if(d.error) showShoonyaStatus(`✗ ${d.error}`, false);
+    else showShoonyaStatus(
+      `✓ Positions OK — ${d.positions.length} position(s) | P&L: ₹${d.summary.total_pnl}`, true);
+  }catch(e){ showShoonyaStatus('Error: '+e.message, false); }
+}
+
+function showShoonyaStatus(msg, ok){
+  const el = document.getElementById('shoonyaStatus');
+  el.textContent = msg;
+  el.className = 'status-box '+(ok===true?'ok':ok===false?'err':'inf');
+}
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+function toggleTheme(isDark){
+  localStorage.setItem('theme', isDark?'dark':'light');
+  document.getElementById('themeLabel').textContent = isDark?'Dark':'Light';
+  if(!isDark){
+    localStorage.setItem('theme_css', `body{background:#F0F2F5!important;color:#1F2328!important}.card,.quote-panel,.analysis-card{background:#fff!important;border-color:#D0D7DE!important}nav{background:#fff!important;border-color:#D0D7DE!important}`);
+    document.body.style.background='#F0F2F5'; document.body.style.color='#1F2328';
+  } else {
+    localStorage.removeItem('theme_css');
+    document.body.style.background=''; document.body.style.color='';
+  }
+}
+
+// ── Desktop Notifications ──────────────────────────────────────────────────────
+function updateNotifLabel(){
+  const lbl = document.getElementById('notifPermLabel');
+  if(!lbl) return;
+  const p = Notification.permission;
+  lbl.textContent = p==='granted'?'(allowed)':(p==='denied'?'(blocked in browser)':'(not requested)');
+  lbl.style.color = p==='granted'?'#3FB950':(p==='denied'?'#F85149':'#8B949E');
+}
+
+async function toggleDesktopAlerts(on){
+  localStorage.setItem('desktop_alerts', on?'true':'false');
+  if(on && Notification.permission !== 'granted'){
+    const perm = await Notification.requestPermission();
+    updateNotifLabel();
+    if(perm !== 'granted'){ document.getElementById('alertDesktop').checked=false; return; }
+  }
+  updateNotifLabel();
+}
+
+function testDesktopNotif(){
+  if(Notification.permission !== 'granted'){ alert('Enable desktop notifications first'); return; }
+  new Notification('StockIQ Alert Test', {
+    body: 'RELIANCE crossed ₹1300 ↑',
+    icon: '/img/favicon.png',
+  });
+}
+
+// ── Cache ─────────────────────────────────────────────────────────────────────
+async function clearCache(){
+  try{
+    const r = await fetch(`${API}/api/cache/clear`,{method:'POST'});
+    const d = await r.json();
+    const el = document.getElementById('cacheStatus');
+    el.textContent = d.success ? `✓ Cleared ${d.files_deleted} cache files` : `✗ ${d.error}`;
+    el.className = 'status-box '+(d.success?'ok':'err');
+  }catch(e){
+    const el = document.getElementById('cacheStatus');
+    el.textContent = 'Error: '+e.message; el.className = 'status-box err';
+  }
+}
+
+// ── Symbol Validator ──────────────────────────────────────────────────────────
+async function validateSymbol(){
+  const sym = document.getElementById('valSymInput').value.trim();
+  if(!sym) return;
+  const el = document.getElementById('valResult');
+  el.textContent = 'Checking...'; el.className = 'status-box inf';
+  try{
+    const r = await fetch(`${API}/api/symbols/validate/${encodeURIComponent(sym)}`);
+    const d = await r.json();
+    if(d.valid){
+      el.innerHTML = `✓ <b>${d.symbol}</b> found on ${d.exchange} — ₹${d.price} — ${d.name}<br>
+        <span style="font-size:11px">${d.suggestion||''}</span>`;
+      el.className = 'status-box ok';
+    } else {
+      el.innerHTML = `✗ ${d.suggestion||'Symbol not found'}${d.alias_of?'<br>Alias: '+d.alias_of:''}`;
+      el.className = 'status-box err';
+    }
+  }catch(e){ el.textContent = 'Error: '+e.message; el.className = 'status-box err'; }
+}
+
+// ── Data sources ──────────────────────────────────────────────────────────────
+async function loadDataInfo(){
+  try{
+    const [ms, prov] = await Promise.all([
+      fetch(`${API}/api/market-status`).then(r=>r.json()),
+      fetch(`${API}/api/provider`).then(r=>r.json()),
+    ]);
+    document.getElementById('dataSourceInfo').innerHTML = `
+      <div class="source-row"><span>NSE Equity</span><span class="badge ${ms.is_open?'badge-ok':'badge-warn'}">${ms.is_open?'Live':'Closed'}</span></div>
+      <div class="source-row"><span>MCX Commodities</span><span class="badge ${ms.mcx_open?'badge-ok':'badge-warn'}">${ms.mcx_open?'Live MCX':'yfinance+INR'}</span></div>
+      <div class="source-row"><span>Active Provider</span><span class="badge badge-info">${prov.provider}</span></div>
+      <div class="source-row"><span>Upstox Module</span><span class="badge ${ms.upstox_live?'badge-ok':'badge-err'}">${ms.upstox_live?'Loaded':'Not Available'}</span></div>
+      <div class="source-row"><span>Market Status</span><span style="color:#8B949E;font-size:12px">${ms.status} — ${ms.datetime_ist||''}</span></div>
+      <div class="source-row"><span>Historical OHLCV</span><span style="color:#8B949E;font-size:12px">yfinance (15min cache)</span></div>`;
+  }catch(e){}
+}
+
+// ── Profit Guard ──────────────────────────────────────────────────────────────
+let _guardLevel = 1;
+
+async function loadGuardSettings(){
+  try{
+    const r = await fetch(`${API}/api/profit-guard/settings`);
+    const d = await r.json();
+    document.getElementById('guardEnabled').checked = !!d.enabled;
+    document.getElementById('guardEnabledLabel').textContent = d.enabled ? 'Enabled' : 'Disabled';
+    document.getElementById('guardTarget').value = d.target || 2000;
+    document.getElementById('guardCooldown').value = d.cooldown_mins || 30;
+    document.getElementById('guardUnlockClicks').value = d.total_clicks || 3;
+    _guardLevel = d.protection_level || 1;
+    renderLevelCards(_guardLevel);
+    renderGuardStatusBanner(d);
+  }catch(e){}
+}
+
+function renderGuardStatusBanner(d){
+  const el = document.getElementById('guardStatusBanner');
+  if(!el) return;
+  if(!d.enabled){ el.innerHTML=''; return; }
+  if(d.triggered && d.is_blocked){
+    const level = d.protection_level;
+    let blockMsg = '';
+    if(level===2) blockMsg = `Cooling-off until ${d.unlock_at ? new Date(d.unlock_at).toLocaleTimeString() : '—'}`;
+    if(level===3) blockMsg = `Hard locked — unlock requires ${d.unlock_clicks} more click(s)`;
+    el.innerHTML = `<div class="status-box err" style="display:block">
+      🔒 <b>TRADING BLOCKED</b> — Daily target of ₹${d.target.toLocaleString()} was reached.
+      ${blockMsg}
+    </div>`;
+  } else if(d.triggered){
+    el.innerHTML = `<div class="status-box ok" style="display:block">
+      ✅ Daily target of ₹${d.target.toLocaleString()} was reached today. Warning was shown.
+    </div>`;
+  } else {
+    el.innerHTML = `<div class="status-box inf" style="display:block">
+      🛡 Active — watching for ₹${(d.target||0).toLocaleString()} daily profit target
+    </div>`;
+  }
+}
+
+function renderLevelCards(selected){
+  [1,2,3].forEach(n=>{
+    const card = document.getElementById(`lc-${n}`);
+    const check = document.getElementById(`lcheck-${n}`);
+    if(!card) return;
+    card.classList.toggle('selected', n===selected);
+    check.style.display = n===selected ? 'inline' : 'none';
+  });
+}
+
+function selectLevel(n){
+  _guardLevel = n;
+  renderLevelCards(n);
+}
+
+function guardToggle(on){
+  document.getElementById('guardEnabledLabel').textContent = on ? 'Enabled' : 'Disabled';
+}
+
+async function saveGuardSettings(){
+  const payload = {
+    enabled:          document.getElementById('guardEnabled').checked,
+    target:           parseFloat(document.getElementById('guardTarget').value)||2000,
+    protection_level: _guardLevel,
+    cooldown_mins:    parseInt(document.getElementById('guardCooldown').value)||30,
+    total_clicks:     parseInt(document.getElementById('guardUnlockClicks').value)||3,
+  };
+  try{
+    const r = await fetch(`${API}/api/profit-guard/settings`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    const el = document.getElementById('guardSaveStatus');
+    if(d.success){
+      el.textContent = '✓ Profit Guard settings saved'; el.className='status-box ok';
+      renderGuardStatusBanner(d.settings);
+    } else {
+      el.textContent = '✗ '+d.error; el.className='status-box err';
+    }
+    setTimeout(()=>{ el.className='status-box'; }, 3000);
+  }catch(e){
+    const el = document.getElementById('guardSaveStatus');
+    el.textContent='Error: '+e.message; el.className='status-box err';
+  }
+}
+
+async function resetGuardToday(){
+  if(!confirm('Reset today\'s lock state? This will remove any active block for today.')) return;
+  try{
+    const r = await fetch(`${API}/api/profit-guard/reset`,{method:'POST'});
+    const d = await r.json();
+    const el = document.getElementById('guardSaveStatus');
+    el.textContent = '✓ Today\'s lock state reset'; el.className='status-box ok';
+    renderGuardStatusBanner(d);
+    setTimeout(()=>{ el.className='status-box'; }, 3000);
+  }catch(e){}
+}
+</script>
+</body>
+</html>

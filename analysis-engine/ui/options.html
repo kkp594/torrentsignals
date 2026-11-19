@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Options Analysis — StockIQ</title>
+<link rel="stylesheet" href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(48,54,61,.8);border-radius:4px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 16px;display:flex;align-items:center;gap:16px;height:52px;flex-wrap:wrap}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:8px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent;text-decoration:none;white-space:nowrap}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.page{max-width:1700px;margin:0 auto;padding:14px 16px}
+
+/* ── Toolbar ── */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;background:#161B22;border:1px solid #30363D;border-radius:8px;padding:10px 14px}
+.sym-wrap{position:relative;min-width:200px;flex:1;max-width:280px}
+.sym-wrap input{width:100%;background:#0D1117;border:1px solid #30363D;border-radius:6px;padding:6px 30px 6px 10px;color:#E6EDF3;font-size:13px;outline:none}
+.sym-wrap input:focus{border-color:#58A6FF}
+.sym-drop{display:none;position:absolute;top:calc(100%+2px);left:0;width:100%;background:#161B22;border:1px solid #30363D;border-radius:6px;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.6);max-height:220px;overflow-y:auto}
+select,input[type=number]{background:#0D1117;border:1px solid #30363D;border-radius:6px;padding:6px 10px;color:#E6EDF3;font-size:13px;outline:none}
+select:focus{border-color:#58A6FF}
+.btn{border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;font-weight:600}
+.btn-blue{background:#1F6FEB;color:#fff}.btn-blue:hover{background:#388BFD}
+.btn-ghost{background:#21262D;border:1px solid #30363D;color:#8B949E}.btn-ghost:hover{background:#30363D;color:#E6EDF3}
+.btn-green{background:#238636;color:#fff}.btn-green:hover{background:#2ea043}
+.btn-red{background:#B91C1C;color:#fff}.btn-red:hover{background:#DC2626}
+.btn-sm{padding:3px 10px;font-size:11px}
+
+/* ── Summary bar ── */
+.sum-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.sum-card{background:#161B22;border:1px solid #30363D;border-radius:6px;padding:8px 12px;min-width:100px;flex:1}
+.sum-lbl{font-size:10px;color:#8B949E;text-transform:uppercase;letter-spacing:.4px}
+.sum-val{font-size:15px;font-weight:700;margin-top:2px}
+
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:1px solid #30363D;margin-bottom:14px;gap:0;background:#161B22;border-radius:8px 8px 0 0;padding:0 12px}
+.tab{padding:10px 16px;cursor:pointer;color:#8B949E;font-size:12px;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-weight:500}
+.tab.active{color:#58A6FF;border-bottom-color:#58A6FF}
+.tab:hover{color:#E6EDF3}
+.tab-pane{display:none}.tab-pane.active{display:block}
+
+/* ── Options chain ── */
+.oc-wrap{overflow-x:auto;border:1px solid #30363D;border-radius:0 0 8px 8px}
+table.chain{width:100%;border-collapse:collapse;font-size:11.5px;white-space:nowrap}
+table.chain thead th{background:#161B22;padding:7px 8px;color:#8B949E;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #30363D;text-align:right;white-space:nowrap}
+table.chain thead th.ctr{text-align:center}
+table.chain tbody tr{border-bottom:1px solid #1C2128}
+table.chain tbody tr:hover td{background:#1C2128}
+td.c{text-align:right;padding:5px 8px;background:#0D1117}
+td.c.itm{background:#0D2010}
+td.p{text-align:right;padding:5px 8px;background:#0D1117}
+td.p.itm{background:#200D0D}
+td.sk{background:#1C2128;color:#E6EDF3;font-weight:700;text-align:center;padding:5px 10px}
+td.sk.atm{background:#1C2A3A;color:#58A6FF}
+.pos{color:#3FB950}.neg{color:#F85149}
+.greek-val{color:#8B949E;font-size:11px}
+/* OI bar inside cell */
+.oi-bar-wrap{display:inline-block;width:40px;height:4px;background:#21262D;border-radius:2px;vertical-align:middle;margin-left:4px}
+.oi-bar{height:4px;border-radius:2px}
+
+/* ── Max pain line ── */
+#mpLine{background:#2A1A3A;color:#BC8CFF;padding:4px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block;margin-bottom:10px}
+
+/* ── Cards ── */
+.card{background:#161B22;border:1px solid #30363D;border-radius:8px;padding:14px;margin-bottom:12px}
+.card h3{font-size:11px;color:#8B949E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+
+/* ── Strategy builder ── */
+.leg-row{display:grid;grid-template-columns:120px 80px 80px 80px 80px 60px 40px;gap:6px;align-items:center;margin-bottom:6px}
+.leg-row label{font-size:10px;color:#8B949E;text-transform:uppercase;letter-spacing:.4px}
+.leg-row select,.leg-row input{padding:5px 8px;font-size:12px}
+.preset-grid{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.preset-btn{background:#21262D;border:1px solid #30363D;border-radius:5px;padding:5px 12px;color:#8B949E;cursor:pointer;font-size:11px;white-space:nowrap}
+.preset-btn:hover{border-color:#58A6FF;color:#58A6FF;background:#1C2128}
+
+/* ── P&L table ── */
+.pnl-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #21262D;font-size:12px}
+.pnl-row:last-child{border-bottom:none}
+
+/* ── Loading ── */
+.loading{color:#8B949E;padding:30px;text-align:center}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid #30363D;border-top-color:#58A6FF;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Columns toggle */
+.col-toggle{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.col-tog{background:#21262D;border:1px solid #30363D;border-radius:4px;padding:2px 8px;color:#8B949E;cursor:pointer;font-size:10px}
+.col-tog.on{border-color:#58A6FF;color:#58A6FF;background:#1C2128}
+</style>
+</head>
+<body>
+<nav>
+  <span class="logo"><img src="img/logo.png"/> StockIQ</span>
+  <a href="/">Hub<!-- Dashboard --></a>
+  <a href="/screener.html">Scan<!-- Screener --></a>
+  <a href="/tips.html"><!-- 💡 -->Tips<!-- Tips --></a>
+  <a href="/chart.html">Chart<!-- Charts --></a>
+  <a href="/options.html" class="active">Opts<!-- Options --></a>
+  <a href="/heatmap.html">Map<!-- Heatmap --></a>
+  <a href="/alerts.html"><!-- 🔔 --> Alert<!-- Alters --></a>
+  <a href="/intel.html"><!-- 🧠 --> Algo<!-- Logic --></a>
+  <a href="/gap-scanner.html"><!-- 📈 --> Gap<!-- Gaps --></a>
+  <a href="/backtester.html"><!-- 🧪 --> Test<!-- Backtest --></a>
+  <a href="/briefing.html"><!-- 📋 --> Brief<!-- Briefing --></a>
+  <a href="/corp-actions.html">Corp</a>
+  <a href="/notes.html">Log<!-- Notes --></a>
+  <a href="/premium.html" style="color:#E3B341">⭐ Premium</a>
+  <a href="/settings.html" style="margin-left:auto">⚙ Settings</a>
+  <span id="mktDot" style="width:8px;height:8px;border-radius:50%;background:#30363D;display:inline-block;margin-left:4px"></span>
+  <span id="mktLbl" style="font-size:11px;color:#8B949E">—</span>
+</nav>
+
+<div class="page">
+
+  <!-- ── Toolbar ── -->
+  <div class="toolbar">
+    <div class="sym-wrap">
+      <input id="symInput" type="text" placeholder="NIFTY, BANKNIFTY, RELIANCE..."
+        oninput="showSymSearch(this.value)" onfocus="showSymSearch(this.value)"
+        onkeydown="if(event.key==='Enter'){hideSymDrop();loadAll()}">
+      <button onclick="clearSym()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#8B949E;cursor:pointer;font-size:14px" id="clearBtn">×</button>
+      <div class="sym-drop" id="symDrop"></div>
+    </div>
+    <select id="expirySelect" onchange="onExpiryChange()" style="min-width:130px"></select>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:11px;color:#8B949E">Show Greeks</span>
+      <label style="position:relative;width:36px;height:20px;cursor:pointer;display:inline-block">
+        <input type="checkbox" id="greeksToggle" checked onchange="renderChain()" style="opacity:0;width:0;height:0">
+        <span style="position:absolute;inset:0;background:#21262D;border-radius:20px;border:1px solid #30363D;transition:.2s" id="greeksSlider"></span>
+        <span style="position:absolute;width:14px;height:14px;left:2px;top:2px;background:#8B949E;border-radius:50%;transition:.2s" id="greeksThumb"></span>
+      </label>
+    </div>
+    <button class="btn btn-blue" onclick="loadAll()">⟳ Load</button>
+    <button class="btn btn-ghost btn-sm" onclick="startAutoRefresh()">▶ Auto 30s</button>
+    <button class="btn btn-ghost btn-sm" id="stopBtn" onclick="stopAutoRefresh()" style="display:none">■ Stop</button>
+    <span id="spotTag" style="font-size:15px;font-weight:700;margin-left:4px;color:#E6EDF3"></span>
+    <span id="chainTime" style="font-size:11px;color:#484F58;margin-left:auto"></span>
+  </div>
+
+  <!-- ── Summary bar ── -->
+  <div class="sum-row">
+    <div class="sum-card"><div class="sum-lbl">PCR (OI)</div><div class="sum-val" id="sPCR" style="color:#58A6FF">—</div></div>
+    <div class="sum-card"><div class="sum-lbl">Call OI</div><div class="sum-val neg" id="sCallOI">—</div></div>
+    <div class="sum-card"><div class="sum-lbl">Put OI</div><div class="sum-val pos" id="sPutOI">—</div></div>
+    <div class="sum-card"><div class="sum-lbl">Max Call OI (Resist)</div><div class="sum-val neg" id="sMaxCall">—</div></div>
+    <div class="sum-card"><div class="sum-lbl">Max Put OI (Support)</div><div class="sum-val pos" id="sMaxPut">—</div></div>
+    <div class="sum-card"><div class="sum-lbl">Max Pain</div><div class="sum-val" id="sMaxPain" style="color:#BC8CFF">—</div></div>
+    <div class="sum-card"><div class="sum-lbl">ATM IV</div><div class="sum-val" id="sIV" style="color:#E3B341">—</div></div>
+    <div class="sum-card" style="min-width:160px">
+      <div class="sum-lbl">Sentiment</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+        <span style="font-size:10px;color:#F85149">Bear</span>
+        <div style="flex:1;height:6px;background:#21262D;border-radius:3px;overflow:hidden">
+          <div id="pcrBar" style="height:6px;border-radius:3px;width:50%;background:#E3B341;transition:width .4s"></div>
+        </div>
+        <span style="font-size:10px;color:#3FB950">Bull</span>
+      </div>
+      <div id="pcrSig" style="font-size:10px;color:#8B949E;margin-top:2px">—</div>
+    </div>
+  </div>
+
+  <!-- ── Tabs ── -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('chain')">📋 Option Chain</div>
+    <div class="tab" onclick="switchTab('oi')">📊 OI Buildup</div>
+    <div class="tab" onclick="switchTab('iv')">📈 IV Surface</div>
+    <div class="tab" onclick="switchTab('strategy')">🏗 Strategy Builder</div>
+    <div class="tab" onclick="switchTab('analysis')">🧠 Analysis</div>
+    <div class="tab" onclick="switchTab('commodity')" style="color:#E3B341">🏅 Commodity Options</div>
+  </div>
+
+  <!-- ── TAB: Option Chain ── -->
+  <div class="tab-pane active" id="tp-chain">
+    <div class="col-toggle" id="colToggle">
+      <span style="font-size:10px;color:#8B949E;margin-right:4px">Columns:</span>
+      <span class="col-tog on" data-col="ltp"    onclick="toggleCol(this)">LTP</span>
+      <span class="col-tog on" data-col="iv"     onclick="toggleCol(this)">IV%</span>
+      <span class="col-tog on" data-col="oi"     onclick="toggleCol(this)">OI</span>
+      <span class="col-tog on" data-col="vol"    onclick="toggleCol(this)">Volume</span>
+      <span class="col-tog on" data-col="delta"  onclick="toggleCol(this)">Δ Delta</span>
+      <span class="col-tog on" data-col="gamma"  onclick="toggleCol(this)">Γ Gamma</span>
+      <span class="col-tog on" data-col="theta"  onclick="toggleCol(this)">Θ Theta</span>
+      <span class="col-tog on" data-col="vega"   onclick="toggleCol(this)">V Vega</span>
+    </div>
+    <div class="oc-wrap" id="chainWrap">
+      <div class="loading">Enter a symbol and click Load</div>
+    </div>
+  </div>
+
+  <!-- ── TAB: OI Buildup ── -->
+  <div class="tab-pane" id="tp-oi">
+    <div class="card">
+      <h3>Open Interest Buildup by Strike</h3>
+      <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;background:#F85149;border-radius:2px;display:inline-block"></span><span style="font-size:12px;color:#8B949E">Call OI (Resistance)</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;background:#3FB950;border-radius:2px;display:inline-block"></span><span style="font-size:12px;color:#8B949E">Put OI (Support)</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;background:#BC8CFF;border-radius:2px;display:inline-block;opacity:.5"></span><span style="font-size:12px;color:#8B949E">Max Pain</span></div>
+      </div>
+      <canvas id="oiCanvas" style="width:100%;background:#0D1117;border-radius:6px"></canvas>
+    </div>
+    <div class="card">
+      <h3>OI Change Analysis</h3>
+      <canvas id="oiChangeCanvas" style="width:100%;background:#0D1117;border-radius:6px"></canvas>
+      <div id="oiSignal" style="margin-top:10px;font-size:12px;color:#8B949E;line-height:1.7"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB: IV Surface ── -->
+  <div class="tab-pane" id="tp-iv">
+    <div class="card">
+      <h3>Implied Volatility Smile / Skew</h3>
+      <div style="font-size:11px;color:#8B949E;margin-bottom:10px">IV across strikes for selected expiry. Shows market's fear/greed at each strike.</div>
+      <canvas id="ivSmileCanvas" style="width:100%;background:#0D1117;border-radius:6px"></canvas>
+    </div>
+    <div class="card">
+      <h3>IV Surface — Multiple Expiries</h3>
+      <canvas id="ivSurfCanvas" style="width:100%;background:#0D1117;border-radius:6px"></canvas>
+      <div id="ivSurfLegend" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:11px"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB: Strategy Builder ── -->
+  <div class="tab-pane" id="tp-strategy">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div>
+        <div class="card">
+          <h3>Preset Strategies</h3>
+          <div class="preset-grid">
+            <button class="preset-btn" onclick="applyPreset('straddle')">Long Straddle</button>
+            <button class="preset-btn" onclick="applyPreset('strangle')">Long Strangle</button>
+            <button class="preset-btn" onclick="applyPreset('bull_call')">Bull Call Spread</button>
+            <button class="preset-btn" onclick="applyPreset('bear_put')">Bear Put Spread</button>
+            <button class="preset-btn" onclick="applyPreset('iron_condor')">Iron Condor</button>
+            <button class="preset-btn" onclick="applyPreset('bull_put')">Bull Put Spread</button>
+            <button class="preset-btn" onclick="applyPreset('covered_call')">Covered Call</button>
+            <button class="preset-btn" onclick="applyPreset('protective_put')">Protective Put</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Strategy Legs</h3>
+          <div style="display:grid;grid-template-columns:100px 60px 70px 70px 70px 50px 28px;gap:4px;margin-bottom:6px">
+            <label style="font-size:10px;color:#8B949E">Action</label>
+            <label style="font-size:10px;color:#8B949E">Qty</label>
+            <label style="font-size:10px;color:#8B949E">Type</label>
+            <label style="font-size:10px;color:#8B949E">Strike</label>
+            <label style="font-size:10px;color:#8B949E">Premium</label>
+            <label style="font-size:10px;color:#8B949E">Expiry</label>
+            <label></label>
+          </div>
+          <div id="legRows"></div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-ghost btn-sm" onclick="addLeg()">+ Add Leg</button>
+            <button class="btn btn-blue btn-sm" onclick="computeStrategy()">Compute P&L</button>
+            <button class="btn btn-ghost btn-sm" onclick="clearLegs()">Clear</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h3>P&L at Expiry</h3>
+          <canvas id="pnlCanvas" style="width:100%;background:#0D1117;border-radius:6px"></canvas>
+        </div>
+        <div class="card">
+          <h3>Strategy Summary</h3>
+          <div id="strategySummary">
+            <div style="color:#8B949E;font-size:12px">Build a strategy to see P&L summary</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: Analysis ── -->
+  <div class="tab-pane" id="tp-analysis">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card">
+        <h3>🎯 Key Levels</h3>
+        <div id="keyLevels"><div style="color:#8B949E">Load a chain to see key levels</div></div>
+      </div>
+      <div class="card">
+        <h3>📊 PCR Trend Interpretation</h3>
+        <div id="pcrAnalysis"><div style="color:#8B949E">Load a chain to see analysis</div></div>
+      </div>
+      <div class="card">
+        <h3>🔥 Most Active Strikes</h3>
+        <div id="activeStrikes"><div style="color:#8B949E">Load a chain to see active strikes</div></div>
+      </div>
+      <div class="card">
+        <h3>⚡ Greeks Summary (ATM ±3 strikes)</h3>
+        <div id="greeksSummary"><div style="color:#8B949E">Load a chain to see Greeks</div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+const API = "";
+let _chainData  = null;   // enriched chain from /api/options-greeks/
+let _spot       = 0;
+let _expiry     = '';
+let _autoTimer  = null;
+let _legs       = [];
+let _hideCols   = new Set();
+let allOptSymbols = [];
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(function(){
+  const css = localStorage.getItem('theme_css');
+  if(css){ const s=document.createElement('style');s.textContent=css;document.head.appendChild(s); }
+  document.getElementById('symInput').value = 'NIFTY';
+  loadOptSymbols();
+  // Don't auto-load — NSE may be unavailable. User clicks Load.
+  fetch('/api/market-status').then(r=>r.json()).then(ms=>{
+    const dot=document.getElementById('mktDot'), lbl=document.getElementById('mktLbl');
+    if(ms.is_open){ dot.style.background='#3FB950'; dot.style.boxShadow='0 0 5px #3FB950'; lbl.textContent='Open'; lbl.style.color='#3FB950'; }
+    else { dot.style.background='#30363D'; lbl.textContent='Closed'; }
+  }).catch(()=>{});
+  // Greeks toggle visual
+  const cb = document.getElementById('greeksToggle');
+  cb.addEventListener('change', ()=>{
+    document.getElementById('greeksSlider').style.background = cb.checked ? '#1F6FEB':'#21262D';
+    document.getElementById('greeksThumb').style.transform   = cb.checked ? 'translateX(16px)':'';
+    document.getElementById('greeksThumb').style.background  = cb.checked ? '#fff':'#8B949E';
+  });
+  cb.dispatchEvent(new Event('change'));
+})();
+
+async function loadOptSymbols(){
+  try{
+    const r = await fetch(`${API}/api/fno-symbols`);
+    const d = await r.json();
+    allOptSymbols = d.all || ['NIFTY','BANKNIFTY','FINNIFTY'];
+  }catch(e){ allOptSymbols=['NIFTY','BANKNIFTY','FINNIFTY','MIDCPNIFTY']; }
+}
+
+// ── Symbol search ─────────────────────────────────────────────────────────────
+const HISTORY_KEY = 'sym_search_history';
+function getHist(){ try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]')}catch{return[]} }
+function addHist(s){ const h=getHist().filter(x=>x!==s); h.unshift(s); localStorage.setItem(HISTORY_KEY,JSON.stringify(h.slice(0,10))); }
+
+function showSymSearch(q){
+  const drop = document.getElementById('symDrop');
+  document.getElementById('clearBtn').style.display = q ? 'block':'none';
+  let items;
+  if(!q){ const h=getHist(); if(!h.length){drop.style.display='none';return;} items=h.slice(0,8).map(s=>({s,hist:true})); }
+  else { const u=q.toUpperCase(); const sw=allOptSymbols.filter(s=>s.startsWith(u)); const co=allOptSymbols.filter(s=>!s.startsWith(u)&&s.includes(u)); items=[...sw,...co].slice(0,12).map(s=>({s,hist:false})); }
+  if(!items.length){drop.style.display='none';return;}
+  drop.innerHTML = items.map(({s,hist})=>`
+    <div style="padding:7px 12px;cursor:pointer;border-bottom:1px solid #1C2128;display:flex;justify-content:space-between"
+      onmouseover="this.style.background='#21262D'" onmouseout="this.style.background='transparent'"
+      onclick="selectSym('${s}')">
+      <span style="color:#E6EDF3;font-weight:600">${hist?'↺ ':''}${s}</span>
+      <span style="font-size:10px;color:#8B949E">${['NIFTY','BANKNIFTY','FINNIFTY','MIDCPNIFTY','SENSEX'].includes(s)?'IDX':'F&O'}</span>
+    </div>`).join('');
+  drop.style.display='block';
+}
+function selectSym(s){ document.getElementById('symInput').value=s; document.getElementById('symDrop').style.display='none'; loadAll(); }
+function clearSym(){ document.getElementById('symInput').value=''; document.getElementById('symDrop').style.display='none'; }
+function hideSymDrop(e){ const d=document.getElementById('symDrop'); if(d&&!d.contains(e.target)&&e.target.id!=='symInput') d.style.display='none'; }
+document.addEventListener('click',hideSymDrop);
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(name){
+  const names=['chain','oi','iv','strategy','analysis'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById(`tp-${name}`).classList.add('active');
+  if(name==='oi'&&_chainData)       drawOICharts();
+  if(name==='iv'&&_chainData)       drawIVCharts();
+  if(name==='strategy'&&!_legs.length) addLeg();
+  if(name==='analysis'&&_chainData) renderAnalysis();
+}
+
+// ── Load everything ───────────────────────────────────────────────────────────
+async function loadAll(){
+  const sym = document.getElementById('symInput').value.trim().toUpperCase();
+  if(!sym) return;
+  addHist(sym);
+  document.getElementById('chainWrap').innerHTML='<div class="loading"><span class="spinner"></span>Loading option chain...</div>';
+  document.getElementById('chainTime').textContent='';
+  document.getElementById('spotTag').textContent='';
+
+  const expiry = document.getElementById('expirySelect').value || '';
+  const url = `${API}/api/options-greeks/${sym}${expiry?'?expiry='+encodeURIComponent(expiry):''}`;
+
+  try{
+    const r = await fetch(url);
+    const d = await r.json();
+    if(d.error){
+      const noToken = d.error.includes('No Upstox token');
+      document.getElementById('chainWrap').innerHTML=`<div class="loading" style="color:#F85149">
+        ⚠ ${d.error}${noToken?'<br><a href="/settings.html" style="color:#58A6FF;font-size:12px">→ Go to Settings to add token</a>':''}
+      </div>`;
+      return;
+    }
+
+    _chainData = d;
+    _spot      = d.spot || 0;
+    _expiry    = d.expiry || '';
+
+    if(_spot) document.getElementById('spotTag').innerHTML=
+      `<span style="color:#8B949E">Spot</span> ₹${_spot.toLocaleString('en-IN',{minimumFractionDigits:2})}`;
+
+    const sel = document.getElementById('expirySelect');
+    if(d.expiries && d.expiries.length){
+      sel.innerHTML = d.expiries.map((e,i)=>
+        `<option value="${e}"${i===0||e===_expiry?' selected':''}>${e}</option>`).join('');
+    }
+
+    renderSummary(d);
+    renderChain();
+    document.getElementById('chainTime').textContent='Updated '+new Date().toLocaleTimeString()+' ('+d.source+')';
+
+    const activeTab = document.querySelector('.tab.active')?.textContent?.trim();
+    if(activeTab?.includes('OI'))       drawOICharts();
+    if(activeTab?.includes('IV'))       drawIVCharts();
+    if(activeTab?.includes('Analysis')) renderAnalysis();
+
+  }catch(e){
+    document.getElementById('chainWrap').innerHTML=
+      `<div class="loading" style="color:#F85149">⚠ ${e.message}</div>`;
+  }
+}
+
+function onExpiryChange(){
+  if(_chainData) loadAll();
+}
+
+// ── Summary bar ───────────────────────────────────────────────────────────────
+function renderSummary(d){
+  const strikes = d.strikes || [];
+  let totalCallOI=0,totalPutOI=0,maxCallOI=0,maxPutOI=0,maxCallStrike=0,maxPutStrike=0,atmIV=0;
+  const atm = findATM(strikes, _spot);
+
+  strikes.forEach(s=>{
+    totalCallOI += s.call_oi||0;
+    totalPutOI  += s.put_oi||0;
+    if((s.call_oi||0)>maxCallOI){ maxCallOI=s.call_oi; maxCallStrike=s.strike; }
+    if((s.put_oi||0)>maxPutOI){   maxPutOI=s.put_oi;   maxPutStrike=s.strike; }
+    if(s.strike===atm && s.call_iv) atmIV=s.call_iv;
+  });
+
+  const pcr = totalCallOI ? (totalPutOI/totalCallOI) : 0;
+  document.getElementById('sPCR').textContent   = pcr.toFixed(2);
+  document.getElementById('sCallOI').textContent= fmtOI(totalCallOI);
+  document.getElementById('sPutOI').textContent = fmtOI(totalPutOI);
+  document.getElementById('sMaxCall').textContent= `${maxCallStrike} (${fmtOI(maxCallOI)})`;
+  document.getElementById('sMaxPut').textContent = `${maxPutStrike} (${fmtOI(maxPutOI)})`;
+  document.getElementById('sMaxPain').textContent= d.max_pain ? `₹${d.max_pain}` : '—';
+  document.getElementById('sIV').textContent     = atmIV ? atmIV.toFixed(1)+'%' : '—';
+
+  // PCR bar + signal
+  const pct = Math.min(100, Math.max(0, (pcr/2)*100));
+  const bar = document.getElementById('pcrBar');
+  bar.style.width = pct+'%';
+  bar.style.background = pcr>1.2?'#3FB950':pcr<0.8?'#F85149':'#E3B341';
+  const sig = pcr>1.5?'Very Bullish — heavy put writing':pcr>1.2?'Bullish — more puts than calls':pcr>0.8?'Neutral — balanced OI':'Bearish — heavy call writing';
+  document.getElementById('pcrSig').textContent = sig;
+}
+
+// ── Option chain render ───────────────────────────────────────────────────────
+function renderChain(){
+  if(!_chainData || !_chainData.strikes) return;
+  const strikes  = _chainData.strikes;
+  const showG    = document.getElementById('greeksToggle').checked;
+  const maxCallOI= Math.max(...strikes.map(s=>s.call_oi||0),1);
+  const maxPutOI = Math.max(...strikes.map(s=>s.put_oi||0),1);
+  const atm      = findATM(strikes, _spot);
+  const show = col => !_hideCols.has(col);
+
+  const cHead = ['LTP','LTP Chg','IV%','Volume','OI','OI Chg','Δ','Γ','Θ','V'];
+  const pHead = ['Δ','Γ','Θ','V','OI Chg','OI','Volume','IV%','LTP Chg','LTP'];
+
+  const visibleCHead = cHead.filter(h=>{
+    if(['LTP','LTP Chg'].includes(h)) return show('ltp');
+    if(h==='IV%')    return show('iv');
+    if(h==='Volume') return show('vol');
+    if(h==='OI'||h==='OI Chg') return show('oi');
+    if(h==='Δ')  return show('delta')&&showG;
+    if(h==='Γ')  return show('gamma')&&showG;
+    if(h==='Θ')  return show('theta')&&showG;
+    if(h==='V')  return show('vega')&&showG;
+    return true;
+  });
+
+  const thead = `<thead>
+    <tr>
+      <th colspan="${visibleCHead.length}" style="background:#0D2010;color:#3FB950;text-align:center;padding:4px">CALLS</th>
+      <th style="background:#1C2128;color:#58A6FF;text-align:center;padding:4px">STRIKE</th>
+      <th colspan="${visibleCHead.length}" style="background:#200D0D;color:#F85149;text-align:center;padding:4px">PUTS</th>
+    </tr>
+    <tr>
+      ${visibleCHead.map(h=>`<th style="text-align:right">${h}</th>`).join('')}
+      <th class="ctr" style="background:#1C2128;color:#58A6FF">Strike</th>
+      ${[...visibleCHead].reverse().map(h=>`<th style="text-align:right">${h}</th>`).join('')}
+    </tr>
+  </thead>`;
+
+  const tbody = strikes.map(s=>{
+    const isATM = s.strike===atm;
+    const cITM  = _spot > s.strike;
+    const pITM  = _spot < s.strike;
+    const cbar  = `<span class="oi-bar-wrap"><span class="oi-bar" style="background:#F85149;width:${(s.call_oi/maxCallOI*100).toFixed(0)}%"></span></span>`;
+    const pbar  = `<span class="oi-bar-wrap"><span class="oi-bar" style="background:#3FB950;width:${(s.put_oi/maxPutOI*100).toFixed(0)}%"></span></span>`;
+
+    const cCells = [];
+    const pCells = [];
+    if(show('ltp')){
+      cCells.push(`<b>${s.call_ltp?s.call_ltp.toFixed(2):'—'}</b>`,
+                  `<span class="${s.call_ltp_chng>=0?'pos':'neg'}">${s.call_ltp_chng?((s.call_ltp_chng>0?'+':'')+s.call_ltp_chng.toFixed(2)):'—'}</span>`);
+      pCells.push(`<b>${s.put_ltp?s.put_ltp.toFixed(2):'—'}</b>`,
+                  `<span class="${s.put_ltp_chng>=0?'pos':'neg'}">${s.put_ltp_chng?((s.put_ltp_chng>0?'+':'')+s.put_ltp_chng.toFixed(2)):'—'}</span>`);
+    }
+    if(show('iv')){
+      cCells.push(`<span style="color:#E3B341">${s.call_iv?s.call_iv.toFixed(1)+'%':'—'}</span>`);
+      pCells.push(`<span style="color:#E3B341">${s.put_iv?s.put_iv.toFixed(1)+'%':'—'}</span>`);
+    }
+    if(show('vol')){
+      cCells.push(fmtOI(s.call_volume));
+      pCells.push(fmtOI(s.put_volume));
+    }
+    if(show('oi')){
+      cCells.push(`${fmtOI(s.call_oi)}${cbar}`,
+                  `<span class="${s.call_oi_chng>=0?'pos':'neg'}">${s.call_oi_chng?fmtOI(Math.abs(s.call_oi_chng)):'—'}</span>`);
+      pCells.push(`${fmtOI(s.put_oi)}${pbar}`,
+                  `<span class="${s.put_oi_chng>=0?'pos':'neg'}">${s.put_oi_chng?fmtOI(Math.abs(s.put_oi_chng)):'—'}</span>`);
+    }
+    if(show('delta')&&showG){
+      cCells.push(`<span class="greek-val">${s.call_delta!=null?s.call_delta.toFixed(3):'—'}</span>`);
+      pCells.push(`<span class="greek-val">${s.put_delta!=null?s.put_delta.toFixed(3):'—'}</span>`);
+    }
+    if(show('gamma')&&showG){
+      cCells.push(`<span class="greek-val">${s.call_gamma!=null?s.call_gamma.toFixed(5):'—'}</span>`);
+      pCells.push(`<span class="greek-val">${s.put_gamma!=null?s.put_gamma.toFixed(5):'—'}</span>`);
+    }
+    if(show('theta')&&showG){
+      cCells.push(`<span class="greek-val neg">${s.call_theta!=null?s.call_theta.toFixed(2):'—'}</span>`);
+      pCells.push(`<span class="greek-val neg">${s.put_theta!=null?s.put_theta.toFixed(2):'—'}</span>`);
+    }
+    if(show('vega')&&showG){
+      cCells.push(`<span class="greek-val">${s.call_vega!=null?s.call_vega.toFixed(3):'—'}</span>`);
+      pCells.push(`<span class="greek-val">${s.put_vega!=null?s.put_vega.toFixed(3):'—'}</span>`);
+    }
+
+    const buildCells = (cells, side, itm) =>
+      cells.map(v=>`<td class="${side}${itm?' itm':''}">${v}</td>`).join('');
+
+    return `<tr>
+      ${buildCells(cCells,'c',cITM)}
+      <td class="sk${isATM?' atm':''}" title="${isATM?'ATM':''}">${s.strike}${isATM?'<br><span style="font-size:9px;color:#58A6FF">ATM</span>':''}</td>
+      ${buildCells([...pCells].reverse(),'p',pITM)}
+    </tr>`;
+  }).join('');
+
+  document.getElementById('chainWrap').innerHTML =
+    `<table class="chain">${thead}<tbody>${tbody}</tbody></table>`;
+}
+
+function toggleCol(el){
+  const col = el.dataset.col;
+  if(_hideCols.has(col)) _hideCols.delete(col); else _hideCols.add(col);
+  el.classList.toggle('on', !_hideCols.has(col));
+  renderChain();
+}
+
+// ── OI Buildup Charts ─────────────────────────────────────────────────────────
+function drawOICharts(){
+  if(!_chainData) return;
+  const strikes = _chainData.strikes || [];
+  const mp      = _chainData.max_pain || 0;
+  const atm     = findATM(strikes, _spot);
+
+  // Show ±15 strikes around ATM
+  const atmIdx = strikes.findIndex(s=>s.strike===atm);
+  const from   = Math.max(0, atmIdx-12);
+  const vis    = strikes.slice(from, from+25);
+
+  _drawOIBar('oiCanvas', vis, mp, 'oi');
+  _drawOIBar('oiChangeCanvas', vis, mp, 'change');
+
+  // OI signal text
+  const totalCOI = strikes.reduce((a,s)=>a+(s.call_oi||0),0);
+  const totalPOI = strikes.reduce((a,s)=>a+(s.put_oi||0),0);
+  const pcr = totalCOI ? (totalPOI/totalCOI) : 0;
+  const maxCallS = strikes.reduce((b,s)=>(s.call_oi||0)>(b.call_oi||0)?s:b, strikes[0]);
+  const maxPutS  = strikes.reduce((b,s)=>(s.put_oi||0)>(b.put_oi||0)?s:b, strikes[0]);
+  document.getElementById('oiSignal').innerHTML = `
+    <b>OI Analysis:</b><br>
+    • Maximum Call OI at <span style="color:#F85149">₹${maxCallS?.strike}</span> → key resistance level<br>
+    • Maximum Put OI at <span style="color:#3FB950">₹${maxPutS?.strike}</span> → key support level<br>
+    • PCR = ${pcr.toFixed(2)} — ${pcr>1.2?'<span style="color:#3FB950">Bullish sentiment (more put writing)</span>':pcr<0.8?'<span style="color:#F85149">Bearish sentiment (more call writing)</span>':'<span style="color:#E3B341">Neutral market</span>'}<br>
+    • Max Pain at <span style="color:#BC8CFF">₹${mp}</span> — options market expects expiry near this level`;
+}
+
+function _drawOIBar(canvasId, vis, mp, mode){
+  const canvas = document.getElementById(canvasId);
+  const W = canvas.parentElement.clientWidth || 800;
+  const H = 220;
+  canvas.width=W; canvas.height=H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle='#0D1117'; ctx.fillRect(0,0,W,H);
+
+  const n = vis.length;
+  if(!n) return;
+
+  const PAD={l:60,r:12,t:16,b:36};
+  const bw  = Math.max(4, (W-PAD.l-PAD.r)/n*0.4);
+  const gap = (W-PAD.l-PAD.r)/n;
+
+  const maxVal = Math.max(...vis.map(s=>Math.max(
+    mode==='oi' ? (s.call_oi||0) : Math.abs(s.call_oi_chng||0),
+    mode==='oi' ? (s.put_oi||0)  : Math.abs(s.put_oi_chng||0)
+  )), 1);
+
+  const yScale = v => PAD.t + (1 - v/maxVal) * (H-PAD.t-PAD.b);
+
+  // Grid
+  ctx.strokeStyle='#21262D'; ctx.lineWidth=1;
+  for(let i=0;i<4;i++){
+    const y=PAD.t+i*(H-PAD.t-PAD.b)/3;
+    ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(W-PAD.r,y); ctx.stroke();
+    const v = maxVal*(1-i/3);
+    ctx.fillStyle='#8B949E'; ctx.font='9px sans-serif'; ctx.textAlign='right';
+    ctx.fillText(fmtOI(v), PAD.l-4, y+3);
+  }
+
+  // Bars
+  vis.forEach((s,i)=>{
+    const x = PAD.l + i*gap + gap/2;
+    const cVal = mode==='oi' ? (s.call_oi||0) : Math.abs(s.call_oi_chng||0);
+    const pVal = mode==='oi' ? (s.put_oi||0)  : Math.abs(s.put_oi_chng||0);
+    const cColor = mode==='change' ? (s.call_oi_chng>=0?'rgba(248,81,73,.9)':'rgba(248,81,73,.4)') : 'rgba(248,81,73,.8)';
+    const pColor = mode==='change' ? (s.put_oi_chng>=0?'rgba(63,185,80,.9)':'rgba(63,185,80,.4)')   : 'rgba(63,185,80,.8)';
+
+    if(cVal>0){
+      const y=yScale(cVal), h=H-PAD.b-y;
+      ctx.fillStyle=cColor; ctx.fillRect(x-bw-1, y, bw, Math.max(1,h));
+    }
+    if(pVal>0){
+      const y=yScale(pVal), h=H-PAD.b-y;
+      ctx.fillStyle=pColor; ctx.fillRect(x+1, y, bw, Math.max(1,h));
+    }
+
+    // Highlight ATM
+    if(s.strike===findATM(vis,_spot)){
+      ctx.strokeStyle='#58A6FF'; ctx.lineWidth=1; ctx.setLineDash([2,2]);
+      ctx.beginPath(); ctx.moveTo(x,PAD.t); ctx.lineTo(x,H-PAD.b); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // X label
+    ctx.fillStyle = s.strike===findATM(vis,_spot)?'#58A6FF':'#8B949E';
+    ctx.font=`${s.strike===findATM(vis,_spot)?'bold ':''
+}9px sans-serif`; ctx.textAlign='center';
+    ctx.fillText(s.strike, x, H-PAD.b+12);
+  });
+
+  // Max pain line
+  if(mp){
+    const mpIdx = vis.findIndex(s=>s.strike===mp);
+    if(mpIdx>=0){
+      const x = PAD.l + mpIdx*gap + gap/2;
+      ctx.strokeStyle='#BC8CFF'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(x,PAD.t); ctx.lineTo(x,H-PAD.b); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='#BC8CFF'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(`Max Pain ₹${mp}`, x, PAD.t+10);
+    }
+  }
+
+  // Legend
+  ctx.fillStyle='#F85149'; ctx.fillRect(PAD.l,PAD.t-14,10,8);
+  ctx.fillStyle='#8B949E'; ctx.font='9px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('Call OI', PAD.l+13, PAD.t-7);
+  ctx.fillStyle='#3FB950'; ctx.fillRect(PAD.l+60,PAD.t-14,10,8);
+  ctx.fillText('Put OI', PAD.l+73, PAD.t-7);
+}
+
+// ── IV Charts ─────────────────────────────────────────────────────────────────
+function drawIVCharts(){
+  if(!_chainData) return;
+  drawIVSmile();
+  drawIVSurface();
+}
+
+function drawIVSmile(){
+  const canvas=document.getElementById('ivSmileCanvas');
+  const W=canvas.parentElement.clientWidth||800;
+  const H=200; canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#0D1117'; ctx.fillRect(0,0,W,H);
+
+  const strikes = _chainData.strikes || [];
+  if(!strikes.length) return;
+
+  const atm = findATM(strikes, _spot);
+  const atmIdx = strikes.findIndex(s=>s.strike===atm);
+  const vis = strikes.slice(Math.max(0,atmIdx-12), atmIdx+13);
+
+  const civs = vis.map(s=>s.call_iv||0);
+  const pivs  = vis.map(s=>s.put_iv||0);
+  const allV  = [...civs,...pivs].filter(v=>v>0);
+  if(!allV.length) return;
+
+  const yMin=Math.min(...allV)*0.9, yMax=Math.max(...allV)*1.1;
+  const PAD={l:45,r:10,t:16,b:30};
+  const n=vis.length;
+  const xPos=i=>PAD.l+i*(W-PAD.l-PAD.r)/(n-1||1);
+  const yScale=v=>PAD.t+(yMax-v)/(yMax-yMin)*(H-PAD.t-PAD.b);
+
+  // Grid
+  ctx.strokeStyle='#21262D'; ctx.lineWidth=1;
+  for(let i=0;i<4;i++){
+    const y=PAD.t+i*(H-PAD.t-PAD.b)/3;
+    ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(W-PAD.r,y); ctx.stroke();
+    ctx.fillStyle='#8B949E'; ctx.font='9px sans-serif'; ctx.textAlign='right';
+    ctx.fillText((yMax-(yMax-yMin)*i/3).toFixed(1)+'%', PAD.l-4, y+3);
+  }
+
+  // ATM line
+  const atmVisIdx=vis.findIndex(s=>s.strike===atm);
+  if(atmVisIdx>=0){
+    ctx.strokeStyle='rgba(88,166,255,0.3)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(xPos(atmVisIdx),PAD.t); ctx.lineTo(xPos(atmVisIdx),H-PAD.b); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Call IV line
+  function drawCurve(ivs, color){
+    ctx.strokeStyle=color; ctx.lineWidth=2; ctx.beginPath();
+    let started=false;
+    ivs.forEach((v,i)=>{
+      if(!v) return;
+      const x=xPos(i), y=yScale(v);
+      started?(ctx.lineTo(x,y)):(ctx.moveTo(x,y),started=true);
+    });
+    ctx.stroke();
+  }
+  drawCurve(civs,'#F85149');
+  drawCurve(pivs,'#3FB950');
+
+  // Dots at each strike
+  vis.forEach((s,i)=>{
+    if(s.call_iv){ ctx.fillStyle='#F85149'; ctx.beginPath(); ctx.arc(xPos(i),yScale(s.call_iv),3,0,Math.PI*2); ctx.fill(); }
+    if(s.put_iv){  ctx.fillStyle='#3FB950'; ctx.beginPath(); ctx.arc(xPos(i),yScale(s.put_iv), 3,0,Math.PI*2); ctx.fill(); }
+  });
+
+  // X labels
+  ctx.fillStyle='#8B949E'; ctx.font='9px sans-serif'; ctx.textAlign='center';
+  vis.forEach((s,i)=>{
+    if(i%2===0) ctx.fillText(s.strike, xPos(i), H-PAD.b+12);
+  });
+
+  // Legend
+  ctx.fillStyle='#F85149'; ctx.fillRect(PAD.l,PAD.t-14,12,3);
+  ctx.fillStyle='#8B949E'; ctx.font='9px sans-serif'; ctx.textAlign='left'; ctx.fillText('Call IV',PAD.l+15,PAD.t-7);
+  ctx.fillStyle='#3FB950'; ctx.fillRect(PAD.l+60,PAD.t-14,12,3);
+  ctx.fillText('Put IV',PAD.l+75,PAD.t-7);
+  ctx.fillStyle='#8B949E'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('Volatility Smile / Skew', W/2, PAD.t-6);
+}
+
+function drawIVSurface(){
+  const canvas=document.getElementById('ivSurfCanvas');
+  const W=canvas.parentElement.clientWidth||800;
+  const H=180; canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#0D1117'; ctx.fillRect(0,0,W,H);
+
+  const ivSurf = _chainData.iv_surface || {};
+  const expiries = Object.keys(ivSurf).slice(0,5);
+  if(!expiries.length){ ctx.fillStyle='#8B949E'; ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.fillText('IV surface data unavailable',W/2,H/2); return; }
+
+  const colors=['#F85149','#58A6FF','#3FB950','#E3B341','#BC8CFF'];
+  const allStrikes = [...new Set(expiries.flatMap(e=>(ivSurf[e]||[]).map(x=>x.strike)))].sort((a,b)=>a-b);
+  const allIVs     = expiries.flatMap(e=>(ivSurf[e]||[]).map(x=>x.call_iv||0)).filter(v=>v>0);
+  if(!allIVs.length || !allStrikes.length) return;
+
+  const yMin=Math.min(...allIVs)*0.9, yMax=Math.max(...allIVs)*1.1;
+  const PAD={l:45,r:10,t:20,b:25};
+  const xScale=k=>PAD.l+(k-allStrikes[0])/(allStrikes[allStrikes.length-1]-allStrikes[0]||1)*(W-PAD.l-PAD.r);
+  const yScale=v=>PAD.t+(yMax-v)/(yMax-yMin)*(H-PAD.t-PAD.b);
+
+  ctx.strokeStyle='#21262D'; ctx.lineWidth=1;
+  for(let i=0;i<4;i++){
+    const y=PAD.t+i*(H-PAD.t-PAD.b)/3;
+    ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(W-PAD.r,y); ctx.stroke();
+    ctx.fillStyle='#8B949E'; ctx.font='9px sans-serif'; ctx.textAlign='right';
+    ctx.fillText((yMax-(yMax-yMin)*i/3).toFixed(1)+'%',PAD.l-4,y+3);
+  }
+
+  const legend=[];
+  expiries.forEach((exp,ei)=>{
+    const pts=(ivSurf[exp]||[]).filter(x=>x.call_iv>0).sort((a,b)=>a.strike-b.strike);
+    if(!pts.length) return;
+    ctx.strokeStyle=colors[ei]; ctx.lineWidth=1.5; ctx.beginPath();
+    let s=true;
+    pts.forEach(pt=>{ const x=xScale(pt.strike),y=yScale(pt.call_iv); s?(ctx.moveTo(x,y),s=false):ctx.lineTo(x,y); });
+    ctx.stroke();
+    legend.push(`<span style="color:${colors[ei]}">${exp}</span>`);
+  });
+
+  // X labels (sample strikes)
+  ctx.fillStyle='#8B949E'; ctx.font='9px sans-serif'; ctx.textAlign='center';
+  const step=Math.max(1,Math.floor(allStrikes.length/6));
+  allStrikes.forEach((k,i)=>{ if(i%step===0) ctx.fillText(k,xScale(k),H-PAD.b+12); });
+
+  document.getElementById('ivSurfLegend').innerHTML = legend.join('<span style="color:#484F58;margin:0 4px">|</span>');
+}
+
+// ── Strategy Builder ──────────────────────────────────────────────────────────
+function addLeg(action='BUY',qty=1,type='CE',strike=0,premium=0,exp=''){
+  if(!strike&&_spot) strike=findATM(_chainData?.strikes||[],_spot)||Math.round(_spot/100)*100;
+  if(!exp&&_expiry) exp=_expiry;
+  const id=Date.now();
+  _legs.push({id,action,qty,type,strike,premium,exp});
+  renderLegs();
+}
+
+function renderLegs(){
+  const expiries=(_chainData?.expiries||[_expiry]).slice(0,6);
+  document.getElementById('legRows').innerHTML=_legs.map(leg=>`
+    <div style="display:grid;grid-template-columns:100px 60px 70px 70px 70px 50px 28px;gap:4px;align-items:center;margin-bottom:5px" id="lr-${leg.id}">
+      <select onchange="updateLeg(${leg.id},'action',this.value)">
+        <option${leg.action==='BUY'?' selected':''}>BUY</option>
+        <option${leg.action==='SELL'?' selected':''}>SELL</option>
+      </select>
+      <input type="number" value="${leg.qty}" min="1" max="100" onchange="updateLeg(${leg.id},'qty',+this.value)">
+      <select onchange="updateLeg(${leg.id},'type',this.value)">
+        <option${leg.type==='CE'?' selected':''}>CE</option>
+        <option${leg.type==='PE'?' selected':''}>PE</option>
+      </select>
+      <input type="number" value="${leg.strike}" step="50" onchange="updateLeg(${leg.id},'strike',+this.value)">
+      <input type="number" value="${leg.premium}" step="0.5" onchange="updateLeg(${leg.id},'premium',+this.value)" placeholder="Premium">
+      <select onchange="updateLeg(${leg.id},'exp',this.value)">
+        ${expiries.map(e=>`<option${e===leg.exp?' selected':''}>${e}</option>`).join('')}
+      </select>
+      <button onclick="removeLeg(${leg.id})" style="background:#3A1A1A;border:none;color:#F85149;border-radius:4px;cursor:pointer;width:24px;height:24px">✕</button>
+    </div>`).join('');
+}
+
+function updateLeg(id,field,val){ const l=_legs.find(x=>x.id===id); if(l) l[field]=val; }
+function removeLeg(id){ _legs=_legs.filter(x=>x.id!==id); renderLegs(); }
+function clearLegs(){ _legs=[]; document.getElementById('legRows').innerHTML=''; document.getElementById('strategySummary').innerHTML='<div style="color:#8B949E;font-size:12px">Build a strategy to see P&L summary</div>'; const c=document.getElementById('pnlCanvas'); const ctx=c.getContext('2d'); c.width=c.parentElement.clientWidth||600; c.height=250; ctx.fillStyle='#0D1117'; ctx.fillRect(0,0,c.width,c.height); }
+
+const PRESETS = {
+  straddle:      [{action:'BUY',type:'CE',offset:0},{action:'BUY',type:'PE',offset:0}],
+  strangle:      [{action:'BUY',type:'CE',offset:2},{action:'BUY',type:'PE',offset:-2}],
+  bull_call:     [{action:'BUY',type:'CE',offset:0},{action:'SELL',type:'CE',offset:2}],
+  bear_put:      [{action:'BUY',type:'PE',offset:0},{action:'SELL',type:'PE',offset:-2}],
+  iron_condor:   [{action:'SELL',type:'CE',offset:1},{action:'BUY',type:'CE',offset:3},{action:'SELL',type:'PE',offset:-1},{action:'BUY',type:'PE',offset:-3}],
+  bull_put:      [{action:'SELL',type:'PE',offset:0},{action:'BUY',type:'PE',offset:-2}],
+  covered_call:  [{action:'SELL',type:'CE',offset:2}],
+  protective_put:[{action:'BUY',type:'PE',offset:-2}],
+};
+
+function applyPreset(name){
+  _legs=[];
+  const def=PRESETS[name]||[];
+  const strikes=_chainData?.strikes||[];
+  const atm=findATM(strikes,_spot)||Math.round((_spot||23000)/100)*100;
+  const step=_spot>20000?100:_spot>5000?50:10;
+  const strikesArr=[...new Set(strikes.map(s=>s.strike))].sort((a,b)=>a-b);
+  const atmIdx=strikesArr.findIndex(s=>s>=atm);
+
+  def.forEach(d=>{
+    const idx=Math.max(0,Math.min(strikesArr.length-1,(atmIdx||10)+d.offset));
+    const k=strikesArr[idx]||(atm+d.offset*step);
+    const chainRow=strikes.find(s=>s.strike===k);
+    const prem=d.type==='CE'?(chainRow?.call_ltp||0):(chainRow?.put_ltp||0);
+    addLeg(d.action,1,d.type,k,prem,_expiry);
+  });
+}
+
+function computeStrategy(){
+  if(!_legs.length){ alert('Add at least one leg first'); return; }
+  const spot=_spot||23000;
+  const step=spot>20000?50:spot>5000?25:5;
+  const range=spot*0.1;
+  const prices=[];
+  for(let p=spot-range;p<=spot+range;p+=step) prices.push(Math.round(p/step)*step);
+
+  const pnlData=prices.map(S=>{
+    let total=0;
+    _legs.forEach(leg=>{
+      const intrinsic=leg.type==='CE'?Math.max(0,S-leg.strike):Math.max(0,leg.strike-S);
+      const prem=leg.premium||0;
+      if(leg.action==='BUY') total += (intrinsic - prem)*leg.qty;
+      else total += (prem - intrinsic)*leg.qty;
+    });
+    return {price:S, pnl:total};
+  });
+
+  // P&L canvas
+  drawPnlChart(pnlData, spot);
+
+  // Summary
+  const pnls=pnlData.map(d=>d.pnl);
+  const maxP=Math.max(...pnls), minP=Math.min(...pnls);
+  const breakevens=[];
+  for(let i=1;i<pnlData.length;i++){
+    if(pnlData[i-1].pnl*pnlData[i].pnl<0)
+      breakevens.push(Math.round((pnlData[i-1].price+pnlData[i].price)/2));
+  }
+  const maxCost=_legs.filter(l=>l.action==='BUY').reduce((a,l)=>a+(l.premium||0)*l.qty,0);
+  const maxCredit=_legs.filter(l=>l.action==='SELL').reduce((a,l)=>a+(l.premium||0)*l.qty,0);
+
+  document.getElementById('strategySummary').innerHTML=`
+    <div class="pnl-row"><span>Max Profit</span><span class="pos">₹${maxP>=1e7?(maxP/1e7).toFixed(2)+'Cr':maxP>=1e5?(maxP/1e5).toFixed(2)+'L':maxP.toFixed(0)}</span></div>
+    <div class="pnl-row"><span>Max Loss</span><span class="neg">₹${minP<=0?minP.toFixed(0):'Unlimited'}</span></div>
+    <div class="pnl-row"><span>Breakeven(s)</span><span>${breakevens.length?breakevens.map(b=>'₹'+b).join(', '):'—'}</span></div>
+    <div class="pnl-row"><span>Net Premium Paid</span><span class="${(maxCost-maxCredit)>0?'neg':'pos'}">₹${(maxCost-maxCredit).toFixed(2)}</span></div>
+    <div class="pnl-row"><span>Strategy Type</span><span style="color:#8B949E">${maxP===Infinity?'Unlimited Profit':maxP>0?'Limited Profit':'Limited Profit'} / ${minP===-Infinity?'Unlimited Risk':minP<0?'Limited Risk':'No Risk'}</span></div>
+    <div style="margin-top:8px;font-size:11px;color:#484F58">P&L computed at expiry. Does not account for time value or early exercise.</div>`;
+}
+
+function drawPnlChart(data, spot){
+  const canvas=document.getElementById('pnlCanvas');
+  const W=canvas.parentElement.clientWidth||600;
+  const H=250; canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#0D1117'; ctx.fillRect(0,0,W,H);
+
+  const pnls=data.map(d=>d.pnl);
+  const prices=data.map(d=>d.price);
+  const yMin=Math.min(...pnls)*1.1, yMax=Math.max(...pnls)*1.1;
+  const PAD={l:65,r:12,t:14,b:30};
+  const xScale=p=>PAD.l+(p-prices[0])/(prices[prices.length-1]-prices[0])*(W-PAD.l-PAD.r);
+  const yScale=v=>PAD.t+(yMax-v)/(yMax-yMin)*(H-PAD.t-PAD.b);
+
+  // Zero line
+  const zy=yScale(0);
+  ctx.strokeStyle='#30363D'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(PAD.l,zy); ctx.lineTo(W-PAD.r,zy); ctx.stroke();
+  ctx.fillStyle='#484F58'; ctx.font='9px sans-serif'; ctx.textAlign='right'; ctx.fillText('0',PAD.l-4,zy+3);
+
+  // Fill areas
+  ctx.beginPath();
+  data.forEach((d,i)=>{ const x=xScale(d.price); i===0?ctx.moveTo(x,yScale(d.pnl)):ctx.lineTo(x,yScale(d.pnl)); });
+  ctx.lineTo(xScale(prices[prices.length-1]),zy);
+  ctx.lineTo(xScale(prices[0]),zy);
+  ctx.closePath();
+  const grad=ctx.createLinearGradient(0,PAD.t,0,H-PAD.b);
+  grad.addColorStop(0,'rgba(63,185,80,0.3)'); grad.addColorStop(1,'rgba(248,81,73,0.3)');
+  ctx.fillStyle=grad; ctx.fill();
+
+  // P&L line
+  ctx.strokeStyle='#58A6FF'; ctx.lineWidth=2.5; ctx.beginPath();
+  data.forEach((d,i)=>{ const x=xScale(d.price),y=yScale(d.pnl); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.stroke();
+
+  // Spot line
+  ctx.strokeStyle='rgba(227,179,65,0.6)'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+  const sx=xScale(spot);
+  ctx.beginPath(); ctx.moveTo(sx,PAD.t); ctx.lineTo(sx,H-PAD.b); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#E3B341'; ctx.font='9px sans-serif'; ctx.textAlign='center'; ctx.fillText('Spot',sx,PAD.t+10);
+
+  // Y axis labels
+  ctx.fillStyle='#8B949E'; ctx.font='9px sans-serif'; ctx.textAlign='right';
+  [yMax,yMax/2,0,yMin/2,yMin].forEach(v=>{
+    ctx.fillStyle=v>0?'#3FB950':v<0?'#F85149':'#8B949E';
+    ctx.fillText((v>0?'+':'')+v.toFixed(0),PAD.l-4,yScale(v)+3);
+  });
+
+  // X labels
+  ctx.fillStyle='#8B949E'; ctx.font='9px sans-serif'; ctx.textAlign='center';
+  const step=Math.max(1,Math.floor(data.length/6));
+  data.forEach((d,i)=>{ if(i%step===0) ctx.fillText(d.price,xScale(d.price),H-PAD.b+12); });
+
+  ctx.fillStyle='#8B949E'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('P&L at Expiry (₹)', W/2, PAD.t+10);
+}
+
+// ── Analysis tab ──────────────────────────────────────────────────────────────
+function renderAnalysis(){
+  if(!_chainData) return;
+  const strikes=_chainData.strikes||[];
+  const mp=_chainData.max_pain||0;
+  const atm=findATM(strikes,_spot);
+
+  // Key levels
+  const maxCall=strikes.reduce((b,s)=>(s.call_oi||0)>(b.call_oi||0)?s:b,strikes[0]);
+  const maxPut =strikes.reduce((b,s)=>(s.put_oi||0)>(b.put_oi||0)?s:b,strikes[0]);
+  document.getElementById('keyLevels').innerHTML=`
+    <div class="pnl-row"><span style="color:#8B949E">ATM Strike</span><span style="font-weight:700;color:#58A6FF">₹${atm}</span></div>
+    <div class="pnl-row"><span style="color:#8B949E">Max Pain Level</span><span style="font-weight:700;color:#BC8CFF">₹${mp}</span></div>
+    <div class="pnl-row"><span style="color:#8B949E">Key Resistance (Max Call OI)</span><span style="font-weight:700;color:#F85149">₹${maxCall?.strike}</span></div>
+    <div class="pnl-row"><span style="color:#8B949E">Key Support (Max Put OI)</span><span style="font-weight:700;color:#3FB950">₹${maxPut?.strike}</span></div>
+    <div class="pnl-row"><span style="color:#8B949E">Spot vs Max Pain</span>
+      <span style="color:${_spot>mp?'#F85149':'#3FB950'}">${_spot>mp?`₹${(_spot-mp).toFixed(0)} above (+${((_spot-mp)/mp*100).toFixed(1)}%)`:_spot<mp?`₹${(mp-_spot).toFixed(0)} below (-${((mp-_spot)/mp*100).toFixed(1)}%)`:'At Max Pain'}</span>
+    </div>`;
+
+  // PCR analysis
+  const totalC=strikes.reduce((a,s)=>a+(s.call_oi||0),0);
+  const totalP=strikes.reduce((a,s)=>a+(s.put_oi||0),0);
+  const pcr=totalC?(totalP/totalC):0;
+  const pcrSig=pcr>1.5?{t:'Strongly Bullish',c:'#3FB950',d:'Heavy put writing at current levels. Market makers expect price to stay above key put OI levels. Expect support to hold.'}:pcr>1.2?{t:'Moderately Bullish',c:'#3FB950',d:'More puts than calls written. Mild bullish bias with support at max put OI strike.'}:pcr>0.8?{t:'Neutral',c:'#E3B341',d:'Balanced OI. No clear directional bias. Market expects range-bound movement.'}:pcr>0.5?{t:'Moderately Bearish',c:'#F85149',d:'More calls than puts written. Resistance at max call OI strike.'}:{t:'Strongly Bearish',c:'#F85149',d:'Heavy call writing. Market expects downside. Resistance is strong.'};
+  document.getElementById('pcrAnalysis').innerHTML=`
+    <div style="margin-bottom:10px"><span style="font-size:16px;font-weight:700;color:${pcrSig.c}">${pcrSig.t}</span> <span style="font-size:12px;color:#8B949E">PCR=${pcr.toFixed(2)}</span></div>
+    <div style="font-size:12px;color:#8B949E;line-height:1.7">${pcrSig.d}</div>
+    <div style="margin-top:8px;font-size:11px;color:#484F58">PCR Rule of thumb: >1.2 = Bullish | 0.8-1.2 = Neutral | <0.8 = Bearish</div>`;
+
+  // Active strikes (top 5 by total OI)
+  const sorted=[...strikes].sort((a,b)=>((b.call_oi||0)+(b.put_oi||0))-((a.call_oi||0)+(a.put_oi||0))).slice(0,5);
+  document.getElementById('activeStrikes').innerHTML=sorted.map((s,i)=>`
+    <div class="pnl-row">
+      <span>#${i+1} ₹${s.strike} ${s.strike===atm?'<span style="color:#58A6FF;font-size:10px">(ATM)</span>':''}</span>
+      <span style="font-size:11px;color:#8B949E">C:${fmtOI(s.call_oi)} P:${fmtOI(s.put_oi)}</span>
+    </div>`).join('');
+
+  // Greeks summary (ATM ±3)
+  const atmIdx=strikes.findIndex(s=>s.strike===atm);
+  const near=strikes.slice(Math.max(0,atmIdx-3),atmIdx+4);
+  const avgDelta=near.reduce((a,s)=>a+(s.call_delta||0),0)/near.length;
+  const avgTheta=near.reduce((a,s)=>a+(s.call_theta||0),0)/near.length;
+  const avgVega =near.reduce((a,s)=>a+(s.call_vega||0),0)/near.length;
+  const atmRow=strikes.find(s=>s.strike===atm);
+  document.getElementById('greeksSummary').innerHTML=`
+    <div class="pnl-row"><span>ATM Call Delta</span><span style="font-weight:700;color:#58A6FF">${atmRow?.call_delta?.toFixed(4)||'—'}</span></div>
+    <div class="pnl-row"><span>ATM Put Delta</span><span style="font-weight:700;color:#58A6FF">${atmRow?.put_delta?.toFixed(4)||'—'}</span></div>
+    <div class="pnl-row"><span>ATM Call Theta (per day)</span><span style="font-weight:700;color:#F85149">${atmRow?.call_theta?.toFixed(2)||'—'}</span></div>
+    <div class="pnl-row"><span>ATM Vega (per 1% IV)</span><span style="font-weight:700;color:#E3B341">${atmRow?.call_vega?.toFixed(3)||'—'}</span></div>
+    <div class="pnl-row"><span>ATM Gamma</span><span style="font-weight:700">${atmRow?.call_gamma?.toFixed(5)||'—'}</span></div>
+    <div class="pnl-row"><span>ATM IV</span><span style="font-weight:700;color:#E3B341">${atmRow?.call_iv?.toFixed(1)||'—'}%</span></div>
+    <div style="margin-top:8px;font-size:11px;color:#484F58">
+      Theta: daily option value decay. Vega: sensitivity to IV change. Gamma: delta acceleration near expiry.
+    </div>`;
+}
+
+// ── Auto refresh ──────────────────────────────────────────────────────────────
+function startAutoRefresh(){
+  stopAutoRefresh();
+  _autoTimer=setInterval(loadAll, 30000);
+  document.getElementById('stopBtn').style.display='inline-block';
+}
+function stopAutoRefresh(){
+  if(_autoTimer){ clearInterval(_autoTimer); _autoTimer=null; }
+  document.getElementById('stopBtn').style.display='none';
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function findATM(strikes,spot){
+  if(!spot||!strikes.length) return strikes[Math.floor(strikes.length/2)]?.strike||0;
+  return strikes.reduce((b,s)=>Math.abs(s.strike-spot)<Math.abs(b.strike-spot)?s:b).strike;
+}
+function fmtOI(n){
+  if(!n||isNaN(n)) return '—';
+  if(n>=1e7) return (n/1e7).toFixed(2)+'Cr';
+  if(n>=1e5) return (n/1e5).toFixed(2)+'L';
+  if(n>=1000) return (n/1000).toFixed(1)+'K';
+  return n.toString();
+}
+
+// ── MCX Commodity Options ─────────────────────────────────────────────────────
+let _comData = null;
+const MCX_SYMBOLS = ['GOLD','GOLDM','GOLDPETAL','SILVER','SILVERM','SILVERMIC',
+                     'CRUDEOIL','CRUDEOILM','NATURALGAS','COPPER','ZINC','ALUMINIUM','NICKEL','LEAD'];
+
+async function loadCommodityChain(){
+  const sym    = document.getElementById('comSymSel').value;
+  const expiry = document.getElementById('comExpirySel').value;
+  const wrap   = document.getElementById('comChainWrap');
+  wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Loading MCX option chain...</div>';
+
+  const url = `${API}/api/options-commodity/${sym}${expiry && expiry !== '— click Load —' ? '?expiry='+encodeURIComponent(expiry) : ''}`;
+  try{
+    const r = await fetch(url);
+    const d = await r.json();
+    if(d.error){
+      wrap.innerHTML = `<div class="loading" style="color:#F85149">
+        ⚠ ${d.error}
+        ${d.error.includes('Upstox token')?'<br><a href="/settings.html" style="color:#58A6FF">→ Add Upstox token in Settings</a>':''}
+        ${d.available?'<br><span style="font-size:11px;color:#8B949E">Available: '+d.available.join(', ')+'</span>':''}
+      </div>`;
+      return;
+    }
+    _comData = d;
+
+    // Update expiry selector
+    const sel = document.getElementById('comExpirySel');
+    sel.innerHTML = (d.expiries||[]).map(e=>
+      `<option value="${e}"${e===d.expiry?' selected':''}>${e}</option>`).join('');
+
+    // Spot / info bar
+    const spot = d.spot||0;
+    document.getElementById('comSpot').innerHTML =
+      `<b style="color:#E6EDF3">₹${spot.toLocaleString('en-IN',{minimumFractionDigits:2})}</b>
+       <span style="color:#484F58"> | Expiry: ${d.expiry} | ${d.total_strikes||0} strikes | MCX | ${d.source}</span>`;
+
+    // Summary stats
+    _renderComSummary(d.strikes||[], spot, d.max_pain);
+
+    renderCommodityChain(d.strikes||[], spot);
+    document.getElementById('comTime').textContent = 'Updated '+new Date().toLocaleTimeString();
+  }catch(e){
+    wrap.innerHTML = `<div class="loading" style="color:#F85149">⚠ ${e.message}</div>`;
+  }
+}
+
+function _renderComSummary(strikes, spot, maxPain){
+  const el = document.getElementById('comSummary');
+  if(!el) return;
+  let totalCOI=0, totalPOI=0, maxCOI=0, maxPOI=0, maxCStrike=0, maxPStrike=0, atmIV=0;
+  const atm = findATM(strikes, spot);
+  strikes.forEach(s=>{
+    totalCOI += s.call_oi||0; totalPOI += s.put_oi||0;
+    if((s.call_oi||0)>maxCOI){ maxCOI=s.call_oi; maxCStrike=s.strike; }
+    if((s.put_oi||0)>maxPOI){  maxPOI=s.put_oi;  maxPStrike=s.strike; }
+    if(s.strike===atm){ atmIV = s.call_iv_pct||s.call_iv||0; }
+  });
+  const pcr = totalCOI ? (totalPOI/totalCOI).toFixed(2) : '—';
+  const card = (lbl,val,col='#E6EDF3')=>
+    `<div class="sum-card"><div class="sum-lbl">${lbl}</div><div class="sum-val" style="color:${col}">${val}</div></div>`;
+  el.innerHTML =
+    card('Spot Price', spot?'₹'+spot.toLocaleString('en-IN'):'—', '#E6EDF3') +
+    card('PCR (OI)', pcr, pcr>1.2?'#3FB950':pcr<0.8?'#F85149':'#E3B341') +
+    card('Call OI', fmtOI(totalCOI), '#F85149') +
+    card('Put OI',  fmtOI(totalPOI), '#3FB950') +
+    card('Max Call (Resist)', maxCStrike?maxCStrike.toLocaleString():'—', '#F85149') +
+    card('Max Put (Support)', maxPStrike?maxPStrike.toLocaleString():'—', '#3FB950') +
+    card('Max Pain', maxPain?'₹'+maxPain.toLocaleString():'—', '#BC8CFF') +
+    card('ATM IV', atmIV?atmIV.toFixed(1)+'%':'—', '#E3B341');
+}
+
+function renderCommodityChain(strikes, spot){
+  const wrap = document.getElementById('comChainWrap');
+  const atm  = findATM(strikes, spot);
+  const maxCOI = Math.max(...strikes.map(s=>s.call_oi||0), 1);
+  const maxPOI = Math.max(...strikes.map(s=>s.put_oi||0), 1);
+
+  const rows = strikes.map(s=>{
+    const isATM = s.strike===atm;
+    const cITM  = spot > s.strike;
+    const pITM  = spot < s.strike;
+    const cbar  = `<span class="oi-bar-wrap"><span class="oi-bar" style="background:#F85149;width:${(s.call_oi/maxCOI*100).toFixed(0)}%"></span></span>`;
+    const pbar  = `<span class="oi-bar-wrap"><span class="oi-bar" style="background:#3FB950;width:${(s.put_oi/maxPOI*100).toFixed(0)}%"></span></span>`;
+    const cchg  = s.call_ltp_chng>=0?'pos':'neg';
+    const pchg  = s.put_ltp_chng>=0?'pos':'neg';
+
+    return `<tr>
+      <td class="c${cITM?' itm':''}">${s.call_ltp?s.call_ltp.toFixed(2):'—'}</td>
+      <td class="c${cITM?' itm':''}"><span class="${cchg}">${s.call_ltp_chng?(s.call_ltp_chng>0?'+':'')+s.call_ltp_chng.toFixed(2):'—'}</span></td>
+      <td class="c${cITM?' itm':''}"><span style="color:#E3B341">${(s.call_iv_pct||s.call_iv||0)>0?((s.call_iv_pct||s.call_iv)).toFixed(1)+'%':'—'}</span></td>
+      <td class="c${cITM?' itm':''}">${fmtOI(s.call_volume)}</td>
+      <td class="c${cITM?' itm':''}"><span class="greek-val">${s.call_delta!=null?s.call_delta.toFixed(3):'—'}</span></td>
+      <td class="c${cITM?' itm':''}">${fmtOI(s.call_oi)}${cbar}</td>
+      <td class="sk${isATM?' atm':''}">${s.strike.toLocaleString('en-IN')}</td>
+      <td class="p${pITM?' itm':''}">${fmtOI(s.put_oi)}${pbar}</td>
+      <td class="p${pITM?' itm':''}"><span class="greek-val">${s.put_delta!=null?s.put_delta.toFixed(3):'—'}</span></td>
+      <td class="p${pITM?' itm':''}">${fmtOI(s.put_volume)}</td>
+      <td class="p${pITM?' itm':''}"><span style="color:#E3B341">${(s.put_iv_pct||s.put_iv||0)>0?((s.put_iv_pct||s.put_iv)).toFixed(1)+'%':'—'}</span></td>
+      <td class="p${pITM?' itm':''}"><span class="${pchg}">${s.put_ltp_chng?(s.put_ltp_chng>0?'+':'')+s.put_ltp_chng.toFixed(2):'—'}</span></td>
+      <td class="p${pITM?' itm':''}">${s.put_ltp?s.put_ltp.toFixed(2):'—'}</td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div class="oc-wrap">
+      <table class="chain">
+        <thead>
+          <tr>
+            <th colspan="6" style="background:#0D2010;color:#3FB950;text-align:center">CALLS</th>
+            <th style="background:#1C2128;color:#58A6FF;text-align:center">STRIKE</th>
+            <th colspan="6" style="background:#200D0D;color:#F85149;text-align:center">PUTS</th>
+          </tr>
+          <tr>
+            <th>LTP</th><th>Chg</th><th>IV%</th><th>Volume</th><th>Δ Delta</th><th>OI</th>
+            <th class="ctr" style="background:#1C2128;color:#58A6FF">Strike</th>
+            <th>OI</th><th>Δ Delta</th><th>Volume</th><th>IV%</th><th>Chg</th><th>LTP</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  document.getElementById('comTime').textContent = 'Updated '+new Date().toLocaleTimeString();
+
+  // OI bar chart
+  drawComOIChart(strikes, spot, atm);
+}
+
+function drawComOIChart(strikes, spot, atm){
+  const canvas = document.getElementById('comOICanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 800;
+  canvas.width = W; canvas.height = 220;
+
+  const nearby = strikes.filter(s=>Math.abs(s.strike-spot)<=spot*0.1);
+  const labels = nearby.map(s=>s.strike.toLocaleString());
+  const cOI    = nearby.map(s=>s.call_oi||0);
+  const pOI    = nearby.map(s=>s.put_oi||0);
+  const maxOI  = Math.max(...cOI,...pOI,1);
+  const bw = W/(nearby.length*2+1)*0.8;
+  const px = i => (i*2+0.6)*W/(nearby.length*2+1);
+
+  ctx.clearRect(0,0,W,220);
+  ctx.fillStyle='#0D1117'; ctx.fillRect(0,0,W,220);
+
+  nearby.forEach((s,i)=>{
+    const x  = px(i);
+    const cH = (cOI[i]/maxOI)*160;
+    const pH = (pOI[i]/maxOI)*160;
+    const isATM = s.strike===atm;
+
+    // Call bar
+    ctx.fillStyle = isATM?'#F8514980':'#F8514960';
+    ctx.fillRect(x, 180-cH, bw, cH);
+    // Put bar
+    ctx.fillStyle = isATM?'#3FB95080':'#3FB95060';
+    ctx.fillRect(x+bw+2, 180-pH, bw, pH);
+
+    // Label
+    ctx.fillStyle='#484F58'; ctx.font='9px monospace';
+    ctx.fillText(labels[i], x, 198);
+  });
+
+  // Spot line
+  const spotX = nearby.findIndex(s=>s.strike>=spot);
+  if(spotX>=0){
+    const lx = px(spotX)-4;
+    ctx.strokeStyle='#58A6FF'; ctx.lineWidth=1.5; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(lx,0); ctx.lineTo(lx,180); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#58A6FF'; ctx.font='10px sans-serif';
+    ctx.fillText('Spot', lx+3, 14);
+  }
+
+  // Legend
+  ctx.fillStyle='#F85149'; ctx.fillRect(W-120,8,10,10);
+  ctx.fillStyle='#8B949E'; ctx.font='10px sans-serif'; ctx.fillText('Call OI',W-107,17);
+  ctx.fillStyle='#3FB950'; ctx.fillRect(W-60,8,10,10);
+  ctx.fillStyle='#8B949E'; ctx.fillText('Put OI',W-47,17);
+}
+
+// Wire tab switching for commodity
+const _origSwitch = switchTab;
+switchTab = function(name){
+  const allTabs=['chain','oi','iv','strategy','analysis','commodity'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',allTabs[i]===name));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  const pane = document.getElementById(`tp-${name}`);
+  if(pane) pane.classList.add('active');
+  if(name==='oi'&&_chainData&&typeof drawOICharts==='function')       drawOICharts();
+  if(name==='iv'&&_chainData&&typeof drawIVCharts==='function')       drawIVCharts();
+  if(name==='strategy'&&!_legs.length&&typeof addLeg==='function')    addLeg();
+  if(name==='analysis'&&_chainData&&typeof renderAnalysis==='function') renderAnalysis();
+};
+
+// ── Commodity auto-refresh ────────────────────────────────────────────────────
+let _comAutoTimer = null;
+function startComAutoRefresh(){
+  if(_comAutoTimer) clearInterval(_comAutoTimer);
+  loadCommodityChain();
+  _comAutoTimer = setInterval(loadCommodityChain, 30000);
+  document.getElementById('comStopBtn').style.display = 'inline-block';
+}
+function stopComAutoRefresh(){
+  if(_comAutoTimer){ clearInterval(_comAutoTimer); _comAutoTimer = null; }
+  document.getElementById('comStopBtn').style.display = 'none';
+}
+</script>
+
+<!-- ── TAB: MCX Commodity Options ── inserted before closing body ── -->
+<div class="tab-pane" id="tp-commodity">
+
+  <!-- Toolbar -->
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;
+              background:#161B22;border:1px solid #30363D;border-radius:8px;padding:10px 14px">
+    <select id="comSymSel" style="min-width:160px" onchange="document.getElementById('comExpirySel').innerHTML='<option>— click Load —</option>'">
+      <option value="CRUDEOIL">CRUDEOIL 🛢</option>
+      <option value="NATURALGAS">NATURALGAS ⛽</option>
+      <option value="GOLD">GOLD 🥇</option>
+      <option value="GOLDM">GOLDM (mini)</option>
+      <option value="GOLDPETAL">GOLDPETAL</option>
+      <option value="SILVER">SILVER 🥈</option>
+      <option value="SILVERM">SILVERM (mini)</option>
+      <option value="SILVERMIC">SILVERMIC (micro)</option>
+      <option value="COPPER">COPPER</option>
+      <option value="ZINC">ZINC</option>
+      <option value="ZINCMINI">ZINCMINI</option>
+      <option value="ALUMINIUM">ALUMINIUM</option>
+      <option value="ALUMINI">ALUMINI (mini)</option>
+      <option value="NICKEL">NICKEL</option>
+      <option value="LEAD">LEAD</option>
+      <option value="LEADMINI">LEADMINI</option>
+    </select>
+    <select id="comExpirySel" style="min-width:130px"><option>— click Load —</option></select>
+    <button class="btn btn-blue" onclick="loadCommodityChain()">⟳ Load Chain</button>
+    <button class="btn btn-ghost btn-sm" onclick="startComAutoRefresh()">▶ Auto 30s</button>
+    <button class="btn btn-ghost btn-sm" id="comStopBtn" onclick="stopComAutoRefresh()" style="display:none">■ Stop</button>
+    <div id="comSpot" style="font-size:12px;color:#8B949E;margin-left:8px"></div>
+    <span id="comTime" style="font-size:11px;color:#484F58;margin-left:auto"></span>
+  </div>
+
+  <!-- Summary row -->
+  <div id="comSummary" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
+
+  <!-- OI bar chart -->
+  <div class="card" style="margin-bottom:12px">
+    <h3>OI Distribution — Nearby Strikes</h3>
+    <canvas id="comOICanvas" style="width:100%;background:#0D1117;border-radius:6px;height:220px"></canvas>
+    <div style="font-size:11px;color:#8B949E;margin-top:6px">
+      <span style="color:#F85149">■</span> Call OI (resistance) &nbsp;
+      <span style="color:#3FB950">■</span> Put OI (support) &nbsp;
+      <span style="color:#58A6FF">— Spot price</span>
+    </div>
+  </div>
+
+  <!-- Option chain table -->
+  <div id="comChainWrap">
+    <div class="loading">Select a commodity and click ⟳ Load Chain</div>
+  </div>
+
+  <!-- Note -->
+  <div style="font-size:11px;color:#484F58;margin-top:12px;padding:10px 14px;
+              background:#161B22;border-radius:6px;border:1px solid #21262D">
+    ℹ MCX commodity options require a valid Upstox access token (Settings → Upstox).
+    Available during MCX trading hours: Morning 9:00–11:30 AM & Evening 5:00–11:30 PM IST.
+    Instruments: GOLD, SILVER, CRUDEOIL, NATURALGAS, COPPER, ZINC, ALUMINIUM, NICKEL, LEAD.
+  </div>
+</div>
+
+</body>
+</html>

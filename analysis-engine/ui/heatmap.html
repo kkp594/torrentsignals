@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Heatmap</title>
+<link rel="stylesheet"href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(48,54,61,0.8);border-radius:4px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 20px;display:flex;align-items:center;gap:24px;height:52px;flex-shrink:0}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:16px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent;text-decoration:none}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.container{padding:12px 16px;height:calc(100vh - 52px);display:flex;flex-direction:column}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;flex-shrink:0}
+.btn{background:#21262D;border:1px solid #30363D;border-radius:6px;padding:4px 12px;color:#8B949E;cursor:pointer;font-size:12px}
+.btn:hover,.btn.active{background:#1C2128;border-color:#58A6FF;color:#58A6FF}
+.btn.refresh{background:#1F6FEB;border-color:#1F6FEB;color:#fff;padding:4px 14px}
+#statusBar{font-size:11px;color:#8B949E;margin-left:auto}
+.heatmap{flex:1;overflow-y:auto;display:grid;gap:4px;align-content:start}
+.hm-cell{border-radius:6px;padding:6px 8px;cursor:pointer;transition:filter .15s;position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:68px}
+.hm-cell:hover{filter:brightness(1.2);z-index:2}
+.hm-sym{font-weight:700;font-size:11px;color:rgba(255,255,255,0.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-price{font-size:10px;color:rgba(255,255,255,0.7)}
+.hm-chg{font-size:13px;font-weight:700;color:#fff}
+.hm-vol{font-size:9px;color:rgba(255,255,255,0.5)}
+/* Color scale */
+.c-strong-up{background:#145214}
+.c-up{background:#1a6e1a}
+.c-mild-up{background:#256325}
+.c-flat{background:#2a3a2a}
+.c-mild-dn{background:#5c2a0e}
+.c-dn{background:#7a1e0e}
+.c-strong-dn{background:#991010}
+.legend{display:flex;align-items:center;gap:4px;margin-left:auto;font-size:10px;color:#8B949E}
+.leg-box{width:14px;height:14px;border-radius:3px}
+</style>
+</head>
+<body>
+<nav>
+  <span class="logo"><img src="img/logo.png"/> StockIQ</span>
+  <a href="/">Hub<!-- Dashboard --></a>
+  <a href="/screener.html">Scan<!-- Screener --></a>
+  <a href="/tips.html"><!-- 💡 -->Tips<!-- Tips --></a>
+  <a href="/chart.html">Chart<!-- Charts --></a>
+  <a href="/options.html">Opts<!-- Options --></a>
+  <a href="/heatmap.html" class="active">Map<!-- Heatmap --></a>
+  <a href="/alerts.html"><!-- 🔔 --> Alert<!-- Alters --></a>
+  <a href="/intel.html"><!-- 🧠 --> Algo<!-- Logic --></a>
+  <a href="/gap-scanner.html"><!-- 📈 --> Gap<!-- Gaps --></a>
+  <a href="/backtester.html"><!-- 🧪 --> Test<!-- Backtest --></a>
+  <a href="/briefing.html"><!-- 📋 --> Brief<!-- Briefing --></a>
+  <a href="/corp-actions.html">Corp</a>
+  <a href="/notes.html">Log<!-- Notes --></a>
+  <a href="/settings.html" style="margin-left:auto">⚙ Settings</a>
+  <span id="marketDot" style="width:8px;height:8px;border-radius:50%;background:#30363D;display:inline-block;margin-left:8px"></span>
+  <span id="marketLabel" style="font-size:11px;color:#8B949E">—</span>
+</nav>
+
+<div class="container">
+  <div class="toolbar">
+    <button class="btn active" id="grp-all"    onclick="setGroup('all',this)">All</button>
+    <button class="btn"        id="grp-nifty50" onclick="setGroup('nifty50',this)">Nifty 50</button>
+    <button class="btn"        id="grp-comm"    onclick="setGroup('comm',this)">Commodity</button>
+    <button class="btn"        id="grp-idx"     onclick="setGroup('idx',this)">Indices</button>
+    <span style="width:1px;height:20px;background:#30363D"></span>
+    <button class="btn active" id="sz-chg"  onclick="setSize('chg',this)">By % Chg</button>
+    <button class="btn"        id="sz-mcap" onclick="setSize('mcap',this)">By Mkt Cap</button>
+    <button class="btn refresh" onclick="loadHeatmap()">↻ Refresh</button>
+    <div class="legend">
+      <div class="leg-box c-strong-up"></div><span>&gt;3%</span>
+      <div class="leg-box c-up" style="margin-left:4px"></div><span>1-3%</span>
+      <div class="leg-box c-mild-up" style="margin-left:4px"></div><span>0-1%</span>
+      <div class="leg-box c-flat" style="margin-left:4px"></div><span>0%</span>
+      <div class="leg-box c-mild-dn" style="margin-left:4px"></div><span>-1</span>
+      <div class="leg-box c-dn" style="margin-left:4px"></div><span>-3</span>
+      <div class="leg-box c-strong-dn" style="margin-left:4px"></div><span>&lt;-3%</span>
+    </div>
+    <span id="statusBar">Loading...</span>
+  </div>
+  <div class="heatmap" id="heatmap"></div>
+</div>
+
+<script>
+const API = "";
+let allData = [];
+let currentGroup = 'all';
+let currentSize  = 'chg';
+
+const COMMODITIES = ['GOLD','GOLDM','SILVER','SILVERM','CRUDEOIL','CRUDEOILM','NATURALGAS','NATGASMINI','COPPER','ZINC'];
+const INDICES     = ['NIFTY50','BANKNIFTY','SENSEX','FINNIFTY','MIDCPNIFTY','NIFTYNXT50','BANKEX'];
+
+function colorClass(chg){
+  if(chg >= 3)   return 'c-strong-up';
+  if(chg >= 1)   return 'c-up';
+  if(chg >= 0)   return 'c-mild-up';
+  if(chg >= -1)  return 'c-flat';
+  if(chg >= -3)  return 'c-mild-dn';
+  if(chg >= -3)  return 'c-dn';
+  return 'c-strong-dn';
+}
+function colorByChg(chg){
+  if(chg >= 3)   return '#0d3d0d';
+  if(chg >= 1.5) return '#145214';
+  if(chg >= 0.5) return '#1a6e1a';
+  if(chg >= 0)   return '#1e4d1e';
+  if(chg >= -0.5)return '#3a2a1a';
+  if(chg >= -1.5)return '#5c2a0e';
+  if(chg >= -3)  return '#7a1e0e';
+  return '#991010';
+}
+
+function fmtPrice(p){ if(!p) return '—'; return p>=1000?'₹'+p.toLocaleString('en-IN',{maximumFractionDigits:0}):'₹'+p.toFixed(2); }
+
+async function loadHeatmap(){
+  document.getElementById('statusBar').textContent = 'Loading...';
+  document.getElementById('heatmap').innerHTML = '<div style="color:#8B949E;padding:40px;text-align:center">Fetching prices...</div>';
+
+  try {
+    const symRes = await fetch(`${API}/api/symbols`);
+    const syms   = await symRes.json();
+
+    // Batch LTP first (market hours)
+    const ltpRes  = await fetch(`${API}/api/ltp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbols:syms})});
+    const ltpData = await ltpRes.json();
+    const marketOpen = !ltpData._market_closed;
+
+    allData = [];
+    // For each sym, if LTP available use it, else fall back to individual quote (capped)
+    const withLtp = syms.filter(s=>ltpData[s]);
+    withLtp.forEach(s=>{
+      const q = ltpData[s];
+      allData.push({
+        symbol: s,
+        price: q.price,
+        chg: q.change_pct||0,
+        source: q.source
+      });
+    });
+
+    // For missing ones (off-market or not covered): sample 50 via individual calls
+    const missing = syms.filter(s=>!ltpData[s]).slice(0,50);
+    await Promise.all(missing.map(s=>
+      fetch(`${API}/api/quote/${s}`).then(r=>r.json()).then(q=>{
+        if(!q.price) return;
+        const prev = q.prev_close||q.price;
+        const chg = prev ? (q.price-prev)/prev*100 : 0;
+        allData.push({symbol:s, price:q.price, chg, source:'yf'});
+      }).catch(()=>{})
+    ));
+
+    document.getElementById('statusBar').textContent = `${allData.length} symbols • ${new Date().toLocaleTimeString()}`;
+    renderHeatmap();
+  } catch(e){
+    document.getElementById('statusBar').textContent = 'Error: '+e.message;
+  }
+}
+
+function setGroup(g, btn){
+  currentGroup = g;
+  document.querySelectorAll('[id^="grp-"]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderHeatmap();
+}
+function setSize(s, btn){
+  currentSize = s;
+  document.querySelectorAll('[id^="sz-"]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderHeatmap();
+}
+
+function renderHeatmap(){
+  const wrap = document.getElementById('heatmap');
+  let data = [...allData];
+
+  // Filter by group
+  if(currentGroup === 'nifty50'){
+    data = data.filter(d=>!COMMODITIES.includes(d.symbol)&&!INDICES.includes(d.symbol));
+  } else if(currentGroup === 'comm'){
+    data = data.filter(d=>COMMODITIES.includes(d.symbol));
+  } else if(currentGroup === 'idx'){
+    data = data.filter(d=>INDICES.includes(d.symbol));
+  }
+
+  // Sort by absolute change descending
+  data.sort((a,b)=>Math.abs(b.chg)-Math.abs(a.chg));
+
+  // Dynamic grid columns based on count
+  const cols = data.length > 80 ? 8 : data.length > 40 ? 6 : data.length > 20 ? 5 : 4;
+  wrap.style.gridTemplateColumns = `repeat(${cols},1fr)`;
+
+  if(!data.length){
+    wrap.innerHTML = '<div style="color:#8B949E;padding:40px;text-align:center;grid-column:1/-1">No data. Click Refresh.</div>';
+    return;
+  }
+
+  wrap.innerHTML = data.map(d=>{
+    const bg = colorByChg(d.chg);
+    const chgSign = d.chg>=0?'+':'';
+    return `<div class="hm-cell" id="hm-cell2" style="background:${bg}" onclick="goChart('${d.symbol}')" title="${d.symbol}: ${fmtPrice(d.price)} ${chgSign}${d.chg.toFixed(2)}%">
+      <div class="hm-sym">${d.symbol}</div>
+      <div>
+        <div class="hm-price">${fmtPrice(d.price)}</div>
+        <div class="hm-chg">${chgSign}${d.chg.toFixed(2)}%</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function goChart(sym){
+  window.location.href = `/chart.html?symbol=${sym}`;
+}
+
+// Market status
+fetch('/api/market-status').then(r=>r.json()).then(ms=>{
+  const dot=document.getElementById('marketDot'), lbl=document.getElementById('marketLabel');
+  if(ms.is_open){ dot.style.background='#3FB950'; dot.style.boxShadow='0 0 6px #3FB950'; lbl.textContent='Market Open'; lbl.style.color='#3FB950'; }
+  else { dot.style.background='#F85149'; lbl.textContent='Market Closed'; }
+}).catch(()=>{});
+
+// Load on start
+loadHeatmap();
+// Auto-refresh every 30s during market hours
+setInterval(()=>{
+  fetch('/api/market-status').then(r=>r.json()).then(ms=>{ if(ms.is_open) loadHeatmap(); }).catch(()=>{});
+}, 30000);
+</script>
+</body>
+</html>

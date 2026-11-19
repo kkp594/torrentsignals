@@ -1,0 +1,38 @@
+date,name,nse,mcx_morning,mcx_evening,notes
+2025-01-01,New Year Day,open,open,closed,MCX evening closed
+2025-01-26,Republic Day,closed,closed,closed,Sunday - already weekend
+2025-02-26,Mahashivratri,closed,closed,open,MCX evening open
+2025-03-14,Holi,closed,closed,open,MCX evening open
+2025-03-31,Id-Ul-Fitr (Ramadan Eid),closed,closed,open,MCX evening open
+2025-04-06,Ram Navami,closed,closed,closed,Sunday - already weekend
+2025-04-10,Shri Mahavir Jayanti,closed,closed,open,MCX evening open
+2025-04-14,Dr. Baba Saheb Ambedkar Jayanti,closed,closed,open,MCX evening open
+2025-04-18,Good Friday,closed,closed,closed,Full MCX closure
+2025-05-01,Maharashtra Day,closed,closed,open,MCX evening open
+2025-06-07,Bakri Id,closed,closed,closed,Saturday - already weekend
+2025-07-06,Muharram,closed,closed,closed,Sunday - already weekend
+2025-08-15,Independence Day,closed,closed,closed,Full MCX closure
+2025-08-27,Ganesh Chaturthi,closed,closed,open,MCX evening open
+2025-10-02,Mahatma Gandhi Jayanti / Dussehra,closed,closed,closed,Full MCX closure
+2025-10-21,Diwali Laxmi Pujan,closed,closed,closed,Full MCX closure (Muhurat trading special session)
+2025-10-22,Diwali-Balipratipada,closed,closed,open,MCX evening open
+2025-11-05,Prakash Gurpurb Sri Guru Nanak Dev,closed,closed,open,MCX evening open
+2025-12-25,Christmas,closed,closed,closed,Full MCX closure
+2026-01-01,New Year Day,open,open,closed,MCX evening closed only
+2026-01-15,Municipal Corporation Election Maharashtra,closed,closed,closed,NSE special holiday
+2026-01-26,Republic Day,closed,closed,closed,Monday
+2026-03-03,Holi,closed,closed,open,MCX evening open
+2026-03-26,Shri Ram Navami,closed,closed,open,MCX evening open
+2026-03-31,Shri Mahavir Jayanti,closed,closed,open,MCX evening open
+2026-04-03,Good Friday,closed,closed,closed,Full MCX closure
+2026-04-14,Dr. Baba Saheb Ambedkar Jayanti,closed,closed,open,MCX evening open
+2026-05-01,Maharashtra Day,closed,closed,open,MCX evening open
+2026-05-28,Bakri Id,closed,closed,closed,Full MCX closure
+2026-06-26,Muharram,closed,closed,closed,Full MCX closure
+2026-09-14,Ganesh Chaturthi,closed,closed,open,MCX evening open
+2026-10-02,Mahatma Gandhi Jayanti,closed,closed,closed,Full MCX closure
+2026-10-20,Dussehra,closed,closed,open,MCX evening open
+2026-11-08,Diwali Laxmi Pujan,closed,closed,closed,Sunday - Muhurat trading (special timings)
+2026-11-10,Diwali-Balipratipada,closed,closed,open,MCX evening open
+2026-11-24,Prakash Gurpurb Sri Guru Nanak Dev,closed,closed,open,MCX evening open
+2026-12-25,Christmas,closed,closed,closed,Full MCX closure

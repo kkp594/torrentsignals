@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade Tips — StockIQ</title>
+<link rel="stylesheet" href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#30363D;border-radius:4px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 16px;display:flex;align-items:center;gap:16px;height:52px;flex-wrap:wrap}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:8px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent;text-decoration:none;white-space:nowrap}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.page{max-width:1500px;margin:0 auto;padding:14px 16px}
+
+/* toolbar */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;
+  background:#161B22;border:1px solid #30363D;border-radius:8px;padding:10px 14px}
+.tag{background:#21262D;border:1px solid #30363D;border-radius:4px;padding:3px 10px;
+  color:#8B949E;cursor:pointer;font-size:11px;white-space:nowrap;transition:all .15s}
+.tag.active,.tag:hover{border-color:#58A6FF;color:#58A6FF;background:#1C2128}
+.sym-inp{background:#0D1117;border:1px solid #30363D;border-radius:6px;padding:6px 10px;
+  color:#E6EDF3;font-size:13px;outline:none;width:150px}
+.sym-inp:focus{border-color:#58A6FF}
+.btn{border:none;border-radius:6px;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
+.btn-blue{background:#1F6FEB;color:#fff}.btn-blue:hover{background:#388BFD}
+.btn-gold{background:#B8860B;color:#fff}.btn-gold:hover{background:#DAA520}
+.btn-ghost{background:#21262D;border:1px solid #30363D;color:#E6EDF3}.btn-ghost:hover{background:#30363D}
+.btn-red{background:#3A1A1A;border:1px solid #F85149;color:#F85149}.btn-red:hover{background:#F85149;color:#fff}
+
+/* mode toggle */
+.mode-seg{display:flex;background:#0D1117;border:1px solid #30363D;border-radius:6px;overflow:hidden;flex-shrink:0}
+.mode-btn{padding:6px 14px;cursor:pointer;font-size:12px;font-weight:600;color:#8B949E;border:none;background:none;transition:all .15s}
+.mode-btn.active{background:#1C2128;color:#58A6FF}
+.mode-btn.gold.active{color:#E3B341}
+.mode-btn:hover:not(.active){color:#E6EDF3}
+
+/* auto badge */
+.auto-badge{background:#1A3A2A;color:#3FB950;border:1px solid #2A5A3A;border-radius:10px;
+  padding:2px 8px;font-size:10px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.auto-badge .dot{width:6px;height:6px;border-radius:50%;background:#3FB950;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* chips */
+.sym-chip{display:inline-flex;align-items:center;gap:4px;background:#21262D;border:1px solid #30363D;
+  border-radius:12px;padding:2px 8px 2px 10px;font-size:11px;color:#8B949E;margin:2px}
+.sym-chip .rm{color:#484F58;cursor:pointer;padding-left:2px}.sym-chip .rm:hover{color:#F85149}
+
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.grid-pro{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px}
+
+/* ── STANDARD CARD ── */
+.tip-card{background:#161B22;border:1px solid #30363D;border-radius:8px;overflow:hidden;transition:border-color .2s}
+.tip-card:hover{border-color:#58A6FF}
+.tip-card-head{padding:10px 14px 8px;border-bottom:1px solid #21262D;display:flex;justify-content:space-between;align-items:flex-start}
+.tip-sym{font-size:15px;font-weight:700}
+.tip-price{font-size:14px;font-weight:700}
+.bias-pill{display:inline-block;padding:1px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px}
+.bias-bull{background:#1A3A2A;color:#3FB950}
+.bias-bear{background:#3A1A1A;color:#F85149}
+.bias-neu {background:#21262D;color:#8B949E}
+.tip-meta{display:flex;gap:10px;font-size:10px;color:#484F58;padding:4px 14px 6px;flex-wrap:wrap}
+.tip-meta b{color:#8B949E}
+.tips-list{padding:8px 14px 12px;display:flex;flex-direction:column;gap:8px}
+.tip-row{background:#0D1117;border:1px solid #21262D;border-radius:6px;padding:8px 10px}
+.tip-row-head{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.tip-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:1px 7px;border-radius:8px}
+.type-intra{background:#1A2A3A;color:#58A6FF}
+.type-btst {background:#1A3A2A;color:#3FB950}
+.type-stbt {background:#3A1A1A;color:#F85149}
+.type-pos  {background:#2A2A1A;color:#E3B341}
+.type-opt  {background:#2A1A3A;color:#BC8CFF}
+.type-range{background:#21262D;color:#8B949E}
+.dir-badge{font-size:11px;font-weight:700;padding:1px 7px;border-radius:4px}
+.dir-buy {background:#1A3A2A;color:#3FB950}
+.dir-sell{background:#3A1A1A;color:#F85149}
+.dir-neu {background:#21262D;color:#8B949E}
+.conf-bar{flex:1;height:4px;background:#21262D;border-radius:2px;overflow:hidden;margin-left:auto}
+.conf-fill{height:4px;border-radius:2px;transition:width .4s}
+.tip-levels{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:6px}
+.tip-lv{text-align:center;background:#161B22;border-radius:4px;padding:4px 6px}
+.tip-lv-lbl{font-size:9px;color:#8B949E;text-transform:uppercase;letter-spacing:.3px}
+.tip-lv-val{font-size:12px;font-weight:700;margin-top:2px}
+.entry-val{color:#58A6FF}.sl-val{color:#F85149}.tgt-val{color:#3FB950}
+.opt-strike{font-size:11px;color:#BC8CFF;margin-bottom:4px}
+.tip-note{font-size:11px;color:#8B949E;line-height:1.6;border-top:1px solid #21262D;padding-top:6px;margin-top:4px}
+.copy-btn{background:none;border:1px solid #30363D;border-radius:3px;padding:1px 7px;
+  color:#8B949E;cursor:pointer;font-size:10px;margin-left:auto;transition:all .15s}
+.copy-btn:hover{color:#58A6FF;border-color:#58A6FF}
+.log-btn{background:none;border:1px solid #2A5A3A;border-radius:3px;padding:1px 7px;
+  color:#3FB950;cursor:pointer;font-size:10px;transition:all .15s}
+.log-btn:hover{background:#1A3A2A}
+.log-btn.saved{color:#484F58;border-color:#21262D;cursor:default}
+
+/* ── PRO CARD ── */
+.pro-card{background:#161B22;border:1px solid #30363D;border-radius:8px;overflow:hidden;transition:border-color .2s}
+.pro-card:hover{border-color:#E3B341}
+.pro-card-head{background:#0D1117;padding:10px 14px 8px;border-bottom:1px solid #21262D;
+  display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.pro-card-sym{font-size:15px;font-weight:700;color:#E3B341}
+.pro-card-price{font-size:14px;font-weight:700}
+.pro-card-actions{display:flex;gap:6px;align-items:center;margin-left:auto}
+.pro-tip-body{padding:12px 14px;font-size:12px;line-height:1.9;color:#C9D1D9;
+  white-space:pre-wrap;font-family:'Cascadia Code','Consolas',monospace}
+.pro-meta{display:flex;gap:10px;font-size:10px;color:#484F58;padding:0 14px 10px;flex-wrap:wrap}
+
+/* ── LOG PANEL ── */
+.log-panel{background:#161B22;border:1px solid #30363D;border-radius:8px;margin-top:16px;overflow:hidden}
+.log-panel-head{padding:10px 16px;border-bottom:1px solid #21262D;display:flex;align-items:center;gap:10px}
+.log-panel-head h3{font-size:13px;font-weight:700;color:#E6EDF3}
+.log-table{width:100%;border-collapse:collapse;font-size:12px}
+.log-table th{padding:6px 12px;text-align:left;font-size:10px;text-transform:uppercase;
+  letter-spacing:.5px;color:#484F58;border-bottom:1px solid #21262D;font-weight:600}
+.log-table td{padding:7px 12px;border-bottom:1px solid #161B22;vertical-align:top;color:#8B949E}
+.log-table tr:hover td{background:#1C2128}
+.log-table td.sym{font-weight:700;color:#E6EDF3}
+.log-table td.bull{color:#3FB950}
+.log-table td.bear{color:#F85149}
+.log-table td.neu{color:#E3B341}
+.log-row-tip{font-size:11px;color:#484F58;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-row-tip:hover{white-space:normal;color:#8B949E;cursor:default}
+.log-del{background:none;border:none;color:#484F58;cursor:pointer;font-size:12px;padding:2px 6px}
+.log-del:hover{color:#F85149}
+.log-copy{background:none;border:1px solid #30363D;border-radius:3px;padding:1px 6px;
+  color:#8B949E;cursor:pointer;font-size:10px}
+.log-copy:hover{color:#58A6FF;border-color:#58A6FF}
+
+/* ── SMART TIPS (Upstox-style) ── */
+.smart-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(295px,1fr));gap:14px}
+/* Each tip is its own card — white/light like Upstox */
+.stip{background:#ffffff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;transition:box-shadow .2s;color:#1A1A2E;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.stip:hover{box-shadow:0 4px 20px rgba(0,0,0,.12)}
+/* Meta row: "Created: 09 NOV 01:42 PM  · StockIQ" */
+.stip-meta-row{display:flex;justify-content:space-between;align-items:center;padding:9px 14px 7px;font-size:11px;color:#8A95A3;border-bottom:1px solid #F0F2F5}
+.stip-source{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#5B6C82;font-weight:600}
+.stip-source-ic{width:16px;height:16px;border-radius:50%;background:#EEF2FF;border:1px solid #C7D2FE;display:flex;align-items:center;justify-content:center;font-size:9px;color:#4F46E5;font-weight:700}
+/* Symbol row */
+.stip-sym-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 14px 2px}
+.stip-sym-name{font-size:15px;font-weight:800;color:#1A1A2E;line-height:1.2}
+.stip-expiry{font-size:11px;color:#8A95A3;margin-top:2px}
+.stip-price-blk{text-align:right}
+.stip-cmp{font-size:16px;font-weight:800;color:#1A1A2E}
+.stip-pnl{font-size:11px;font-weight:600;margin-top:2px}
+.stip-pnl.up{color:#22C55E}.stip-pnl.dn{color:#EF4444}
+/* Tags row */
+.stip-tags{display:flex;align-items:center;gap:5px;padding:6px 14px 6px;flex-wrap:wrap}
+.stip-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.4px}
+.stip-tag.buy  {background:#ECFDF5;color:#15803D;border:1px solid #BBF7D0}
+.stip-tag.sell {background:#FEF2F2;color:#DC2626;border:1px solid #FECACA}
+.stip-tag.intra{background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE}
+.stip-tag.btst {background:#F0FDF4;color:#166534;border:1px solid #BBF7D0}
+.stip-tag.stbt {background:#FFF7ED;color:#C2410C;border:1px solid #FED7AA}
+.stip-tag.pos  {background:#FFFBEB;color:#92400E;border:1px solid #FDE68A}
+.stip-tag.opt  {background:#FAF5FF;color:#6B21A8;border:1px solid #E9D5FF}
+.stip-tag.neu  {background:#F9FAFB;color:#374151;border:1px solid #D1D5DB}
+.stip-conf{margin-left:auto;font-size:11px;font-weight:700;padding:2px 10px;border-radius:10px}
+.stip-conf.hi {background:#ECFDF5;color:#15803D;border:1px solid #BBF7D0}
+.stip-conf.mid{background:#FFFBEB;color:#92400E;border:1px solid #FDE68A}
+.stip-conf.lo {background:#FEF2F2;color:#DC2626;border:1px solid #FECACA}
+/* Levels row */
+.stip-lvls{display:grid;grid-template-columns:1fr 1fr 1fr;padding:10px 14px 10px;border-top:1px solid #F0F2F5;margin-top:4px}
+.stip-lv-b{text-align:center}
+.stip-lv-b:first-child{text-align:left}.stip-lv-b:last-child{text-align:right}
+.stip-lv-lbl3{font-size:11px;color:#8A95A3;margin-bottom:3px;font-weight:500}
+.stip-lv-val3{font-size:16px;font-weight:800;color:#1A1A2E}
+.stip-lv-val3.sl   {color:#EF4444}
+.stip-lv-val3.tgt  {color:#22C55E}
+.stip-lv-val3.entry{color:#3B82F6}
+/* Bottom action row */
+.stip-action-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px 12px;border-top:1px solid #F0F2F5;gap:10px}
+.stip-pot-wrap{display:flex;align-items:center;gap:8px}
+.stip-pot-ic{width:30px;height:30px;border-radius:50%;background:#ECFDF5;border:1px solid #A7F3D0;display:flex;align-items:center;justify-content:center;font-size:15px;color:#22C55E;flex-shrink:0}
+.stip-pot-ic.dn{background:#FEF2F2;border-color:#FECACA;color:#EF4444}
+.stip-pot-num{font-size:20px;font-weight:900;color:#22C55E;line-height:1}
+.stip-pot-num.dn{color:#EF4444}
+.stip-pot-lbl{font-size:10px;color:#8A95A3;font-weight:500;margin-top:1px}
+.stip-act-btn{background:#22C55E;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap;flex-shrink:0}
+.stip-act-btn:hover{background:#16A34A}
+.stip-act-btn.sell{background:#EF4444}.stip-act-btn.sell:hover{background:#DC2626}
+.stip-act-btn.wait{background:#94A3B8}.stip-act-btn.wait:hover{background:#64748B}
+/* note */
+.stip-note-s{padding:0 14px 10px;font-size:11px;color:#64748B;line-height:1.6;border-top:1px solid #F0F2F5;padding-top:8px}
+/* options badge */
+.stip-opt-b{display:inline-flex;align-items:center;gap:4px;background:#FAF5FF;border:1px solid #E9D5FF;color:#7C3AED;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;margin:2px 14px 6px}
+/* util row */
+.stip-util{display:flex;gap:6px;padding:0 14px 10px}
+.stip-util-btn{flex:1;border:1px solid #E2E8F0;border-radius:7px;padding:6px;font-size:11px;font-weight:600;cursor:pointer;background:#fff;color:#64748B;transition:all .15s}
+.stip-util-btn:hover{border-color:#3B82F6;color:#3B82F6}
+.stip-util-btn.saved{color:#9CA3AF;cursor:default}
+/* loading shimmer */
+.smart-shimmer{background:linear-gradient(90deg,#f0f2f5 25%,#e8ecf0 50%,#f0f2f5 75%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite;border-radius:12px;height:260px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+background:#161B22;border:1px solid #30363D;border-radius:8px;
+  padding:40px;text-align:center;color:#8B949E;grid-column:1/-1}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #30363D;
+  border-top-color:#58A6FF;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* toast */
+.toast{position:fixed;bottom:24px;right:24px;background:#1C2128;border:1px solid #30363D;
+  border-radius:8px;padding:10px 16px;font-size:12px;color:#E6EDF3;z-index:9999;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<nav>
+  <span class="logo"><img src="img/logo.png" style="height:22px;vertical-align:middle"/> StockIQ</span>
+  <a href="/">Hub</a>
+  <a href="/screener.html">Scan</a>
+  <a href="/tips.html" class="active">Tips</a>
+  <a href="/chart.html">Chart</a>
+  <a href="/options.html">Opts</a>
+  <a href="/heatmap.html">Map</a>
+  <a href="/alerts.html">Alert</a>
+  <a href="/intel.html">Algo</a>
+  <a href="/gap-scanner.html">Gap</a>
+  <a href="/backtester.html">Test</a>
+  <a href="/briefing.html">Brief</a>
+  <a href="/corp-actions.html">Corp</a>
+  <a href="/notes.html">Log</a>
+  <a href="/premium.html" style="color:#E3B341">⭐ Premium</a>
+  <a href="/settings.html" style="margin-left:auto">⚙ Settings</a>
+</nav>
+
+<div class="page">
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <!-- Mode -->
+    <div class="mode-seg">
+      <button id="modeStd"   class="mode-btn active"  onclick="setMode('standard')">📊 Standard</button>
+      <button id="modeSmart" class="mode-btn"          onclick="setMode('smart')"   style="color:#3FB950">🎯 Smart Tips</button>
+      <button id="modePro"   class="mode-btn gold"     onclick="setMode('pro')">⭐ Pro Tips</button>
+      <button id="modeLog"   class="mode-btn"          onclick="setMode('log')">📋 Log</button>
+    </div>
+
+    <!-- Presets -->
+    <div id="presetRow" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:11px;color:#8B949E;white-space:nowrap">Quick:</span>
+      <div class="tag active" onclick="loadPreset('indices',this)">Indices</div>
+      <div class="tag"        onclick="loadPreset('fno',this)">F&amp;O Stocks</div>
+      <div class="tag"        onclick="loadPreset('commodities',this)">Commodities</div>
+      <div class="tag"        onclick="loadPreset('custom',this)">Custom</div>
+    </div>
+
+    <div id="customChips" style="display:none;flex-wrap:wrap"></div>
+    <input class="sym-inp" id="addSym" placeholder="Add symbol…"
+      oninput="this.value=this.value.toUpperCase()"
+      onkeydown="if(event.key==='Enter') addCustom()">
+    <button class="btn btn-ghost" onclick="addCustom()" style="padding:6px 12px;font-size:12px">+ Add</button>
+
+    <!-- VIX (pro mode only) -->
+    <div id="vixRow" style="display:none;align-items:center;gap:6px">
+      <span style="font-size:11px;color:#8B949E">IndiaVIX:</span>
+      <input type="number" id="vixInput" step="0.1" min="5" max="60" placeholder="e.g. 13.5"
+        style="width:70px;background:#0D1117;border:1px solid #30363D;border-radius:6px;
+               padding:5px 8px;color:#E3B341;font-size:12px;outline:none">
+    </div>
+
+    <div style="flex:1"></div>
+
+    <div class="auto-badge" id="autoBadge" style="display:none">
+      <span class="dot"></span>Auto-refresh ON
+    </div>
+    <button class="btn btn-ghost" onclick="toggleAuto()" id="autoBtn"
+      style="padding:6px 12px;font-size:12px;display:none">▶ Auto 60s</button>
+    <button class="btn btn-blue" onclick="runTips()" id="runBtn">💡 Generate Tips</button>
+    <span id="lastUpdate" style="font-size:11px;color:#484F58"></span>
+  </div>
+
+  <!-- Content area -->
+  <div id="tipsGrid" class="grid">
+    <div class="loading-card">Select a preset and click Generate Tips</div>
+  </div>
+
+  <!-- Log panel (shown in log mode) -->
+  <div id="logPanel" class="log-panel" style="display:none">
+    <div class="log-panel-head">
+      <h3>📋 Tips Log</h3>
+      <span id="logCount" style="font-size:11px;color:#484F58"></span>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <input class="sym-inp" id="logFilter" placeholder="Filter by symbol…"
+          style="width:140px;font-size:12px;padding:4px 8px"
+          oninput="loadLog()" onchange="this.value=this.value.toUpperCase()">
+        <button class="btn btn-red" style="padding:4px 12px;font-size:11px"
+          onclick="clearLog()">🗑 Clear All</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="log-table">
+        <thead>
+          <tr>
+            <th>Date/Time</th>
+            <th>Symbol</th>
+            <th>Mode</th>
+            <th>Bias</th>
+            <th>Direction</th>
+            <th>Entry</th>
+            <th>SL</th>
+            <th>Target 1</th>
+            <th>Target 2</th>
+            <th>Price</th>
+            <th>Tip</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="logBody"></tbody>
+      </table>
+    </div>
+    <div id="logEmpty" style="display:none;padding:30px;text-align:center;color:#484F58">
+      No tips logged yet. Generate tips and click 📋 Log to save them.
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "";
+
+const PRESETS = {
+  indices:     ["NIFTY50","BANKNIFTY","FINNIFTY","SENSEX"],
+  fno:         ["RELIANCE","TCS","HDFCBANK","INFY","ICICIBANK","SBIN","BAJFINANCE","AXISBANK","HCLTECH","LT"],
+  commodities: ["GOLD","SILVER","CRUDEOIL","NATURALGAS","COPPER"],
+  custom:      []
+};
+
+let activePreset = "indices";
+let customSyms   = JSON.parse(localStorage.getItem("tips_custom") || "[]");
+let currentMode  = "standard";
+let autoTimer    = null;
+let autoOn       = false;
+let _lastResults = [];   // cache last API results for logging
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+(function(){ const css=localStorage.getItem("theme_css"); if(css){const s=document.createElement("style");s.textContent=css;document.head.appendChild(s);}})();
+
+// ── Mode ──────────────────────────────────────────────────────────────────────
+function setMode(mode) {
+  currentMode = mode;
+  ["modeStd","modeSmart","modePro","modeLog"].forEach(id => {
+    const el = document.getElementById(id); if(el) el.classList.remove("active");
+  });
+  const map = {standard:"modeStd", smart:"modeSmart", pro:"modePro", log:"modeLog"};
+  const btn = document.getElementById(map[mode]); if(btn) btn.classList.add("active");
+
+  const isLog = mode === "log";
+  document.getElementById("presetRow").style.display  = isLog ? "none" : "flex";
+  document.getElementById("customChips").style.display = (!isLog && activePreset==="custom") ? "flex" : "none";
+  document.getElementById("addSym").style.display     = isLog ? "none" : "";
+  document.getElementById("vixRow").style.display     = mode === "pro" ? "flex" : "none";
+  document.getElementById("runBtn").style.display     = isLog ? "none" : "";
+  document.getElementById("autoBtn").style.display    = isLog ? "none" : "";
+  document.getElementById("autoBadge").style.display  = (isLog || !autoOn) ? "none" : "inline-flex";
+  document.getElementById("tipsGrid").style.display   = isLog ? "none" : "";
+  document.getElementById("logPanel").style.display   = isLog ? "block" : "none";
+
+  // update grid class
+  const grid = document.getElementById("tipsGrid");
+  if (mode === "pro")     grid.className = "grid-pro";
+  else if(mode==="smart") grid.className = "smart-grid";
+  else                    grid.className = "grid";
+
+  if (isLog) loadLog();
+}
+
+// ── Presets ───────────────────────────────────────────────────────────────────
+function loadPreset(name, el) {
+  activePreset = name;
+  document.querySelectorAll(".tag").forEach(t => t.classList.remove("active"));
+  if (el) el.classList.add("active");
+  const chips = document.getElementById("customChips");
+  chips.style.display = name === "custom" ? "flex" : "none";
+  if (name === "custom") renderChips();
+}
+
+function renderChips() {
+  const el = document.getElementById("customChips");
+  el.innerHTML = "";
+  customSyms.forEach(s => {
+    el.innerHTML += `<span class="sym-chip">${s}<span class="rm" onclick="removeSym('${s}')">✕</span></span>`;
+  });
+  if (!customSyms.length)
+    el.innerHTML = `<span style="font-size:11px;color:#484F58">No symbols added yet</span>`;
+}
+
+function addCustom() {
+  const inp = document.getElementById("addSym");
+  const sym = inp.value.trim().toUpperCase();
+  if (!sym) return;
+  if (!customSyms.includes(sym)) customSyms.push(sym);
+  localStorage.setItem("tips_custom", JSON.stringify(customSyms));
+  inp.value = "";
+  activePreset = "custom";
+  document.querySelectorAll(".tag").forEach(t => t.classList.remove("active"));
+  document.querySelector("[onclick*=\"'custom'\"]").classList.add("active");
+  document.getElementById("customChips").style.display = "flex";
+  renderChips();
+}
+
+function removeSym(s) {
+  customSyms = customSyms.filter(x => x !== s);
+  localStorage.setItem("tips_custom", JSON.stringify(customSyms));
+  renderChips();
+}
+
+// ── Auto-refresh ──────────────────────────────────────────────────────────────
+function toggleAuto() {
+  autoOn = !autoOn;
+  const btn = document.getElementById("autoBtn"), badge = document.getElementById("autoBadge");
+  if (autoOn) {
+    btn.textContent = "■ Stop Auto";
+    badge.style.display = "inline-flex";
+    autoTimer = setInterval(runTips, 60000);
+  } else {
+    btn.textContent = "▶ Auto 60s";
+    badge.style.display = "none";
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+  }
+}
+
+// ── Main generate ─────────────────────────────────────────────────────────────
+async function runTips() {
+  const symbols = activePreset === "custom" ? customSyms : PRESETS[activePreset];
+  if (!symbols || !symbols.length) {
+    document.getElementById("tipsGrid").innerHTML =
+      `<div class="loading-card">No symbols selected</div>`;
+    return;
+  }
+  const btn = document.getElementById("runBtn");
+  btn.textContent = "⏳ Loading…"; btn.disabled = true;
+  document.getElementById("tipsGrid").innerHTML =
+    `<div class="loading-card"><span class="spinner"></span>Generating tips for ${symbols.length} symbol${symbols.length>1?"s":""}…</div>`;
+
+  try {
+    const vix = parseFloat(document.getElementById("vixInput").value) || undefined;
+    const endpoint = currentMode === "pro" ? "/api/pro-tips/batch" : "/api/tips/batch";
+    const body = { symbols };
+    if (vix) body.vix = vix;
+
+    const r   = await fetch(`${API}${endpoint}`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    _lastResults = d.results || [];
+
+    if (currentMode === "pro") {
+      renderProTips(_lastResults);
+    } else if (currentMode === "smart") {
+      renderSmartTips(_lastResults);
+    } else {
+      renderStandardTips(_lastResults);
+    }
+    document.getElementById("lastUpdate").textContent =
+      "Updated " + new Date().toLocaleTimeString() + (d.generated ? " · " + d.generated : "");
+  } catch(e) {
+    document.getElementById("tipsGrid").innerHTML =
+      `<div class="loading-card" style="color:#F85149">Error: ${e.message}</div>`;
+  }
+  btn.textContent = "💡 Generate Tips"; btn.disabled = false;
+}
+
+// ── Smart Tips renderer (Upstox-style) ───────────────────────────────────────
+function renderSmartTips(results) {
+  const grid = document.getElementById("tipsGrid");
+  if (!results.length) { grid.innerHTML = `<div class="loading-card">No results</div>`; return; }
+
+  grid.innerHTML = results.map(r => {
+    if (r.error) return `
+      <div class="smart-card">
+        <div class="smart-card-head">
+          <span class="smart-sym">${r.symbol}</span>
+          <span style="color:#F85149;font-size:12px">⚠ ${r.error}</span>
+        </div>
+      </div>`;
+
+    const priceFmt = r.price
+      ? `₹${Number(r.price).toLocaleString("en-IN",{minimumFractionDigits:2})}`
+      : "—";
+
+    const lv = r.levels || {};
+    const tips = r.tips || [];
+
+    // Build indicator pills
+    const rsiVal  = r.rsi ? Number(r.rsi).toFixed(1) : null;
+    const rsiCls  = rsiVal ? (rsiVal>60?"green":rsiVal<40?"red":"") : "";
+    const stCls   = r.st_bull ? "green" : "red";
+    const volCls  = r.vol_ratio > 1.3 ? "green" : r.vol_ratio < 0.7 ? "red" : "";
+    const indHtml = `
+      ${rsiVal ? `<span class="stip-ind-pill ${rsiCls}">RSI ${rsiVal}</span>` : ""}
+      ${r.atr   ? `<span class="stip-ind-pill">ATR ${r.atr}</span>` : ""}
+      ${r.vol_ratio ? `<span class="stip-ind-pill ${volCls}">Vol ${r.vol_ratio}x</span>` : ""}
+      ${r.st_bull !== undefined ? `<span class="stip-ind-pill ${stCls}">ST ${r.st_bull?"▲":"▼"}</span>` : ""}
+      ${lv.ema20  ? `<span class="stip-ind-pill">EMA20 ${lv.ema20}</span>` : ""}
+      ${lv.s1     ? `<span class="stip-ind-pill red">S1 ${lv.s1}</span>` : ""}
+      ${lv.r1     ? `<span class="stip-ind-pill green">R1 ${lv.r1}</span>` : ""}
+    `;
+
+    const tipsHtml = tips.map(t => buildSmartTip(t, r)).join("") ||
+      `<div style="color:#484F58;font-size:12px;text-align:center;padding:16px">
+        No actionable setup at current levels
+      </div>`;
+
+    return `
+      <div class="smart-card">
+        <div class="smart-card-head">
+          <div>
+            <span class="smart-sym">${r.symbol}</span>
+          </div>
+          <div style="text-align:right">
+            <div class="smart-price">${priceFmt}</div>
+            <div style="font-size:10px;color:#484F58;margin-top:1px">${r.generated||""}</div>
+          </div>
+        </div>
+        <div class="smart-inds">${indHtml}</div>
+        <div class="smart-tips-wrap">${tipsHtml}</div>
+      </div>`;
+  }).join("");
+}
+
+function buildSmartTip(t, r) {
+  const dir     = (t.direction || "").toUpperCase();
+  const isBuy   = dir.includes("BUY") && !dir.includes("AVOID");
+  const isSell  = dir.includes("SELL") || dir.includes("AVOID");
+  const dirKey  = isBuy ? "buy" : isSell ? "sell" : "neutral";
+  const dirLbl  = isBuy ? "BUY" : isSell ? "SELL" : "WAIT";
+
+  const conf    = t.confidence || 50;
+  const confColor = conf >= 70 ? "#3FB950" : conf >= 55 ? "#E3B341" : "#F85149";
+
+  // R:R ratio
+  let rrHtml = "";
+  try {
+    const entry = parseFloat(String(t.entry).split("–")[0].replace(/[^\d.]/g,""));
+    const sl    = parseFloat(String(t.sl));
+    const tgt   = parseFloat(String(t.target1));
+    if (entry && sl && tgt && entry !== sl) {
+      const risk   = Math.abs(entry - sl);
+      const reward = Math.abs(tgt - entry);
+      const rr     = (reward / risk).toFixed(2);
+      rrHtml = `<div class="stip-rr">Risk:Reward <b>1 : ${rr}</b>
+        &nbsp;·&nbsp; Risk <b style="color:#F85149">₹${risk.toFixed(0)}</b>
+        &nbsp;·&nbsp; Reward <b style="color:#3FB950">₹${reward.toFixed(0)}</b></div>`;
+    }
+  } catch(e) {}
+
+  // Probability arc SVG
+  const pct  = Math.min(100, Math.max(0, conf));
+  const r2   = 20, cx = 22, cy = 22;
+  const circ = Math.PI * r2;
+  const dash = (pct / 100) * circ;
+  const arcColor = conf >= 70 ? "#3FB950" : conf >= 55 ? "#E3B341" : "#F85149";
+  const arcSvg = `
+    <svg width="44" height="44" viewBox="0 0 44 44">
+      <circle cx="${cx}" cy="${cy}" r="${r2}" fill="none" stroke="#21262D" stroke-width="4"/>
+      <circle cx="${cx}" cy="${cy}" r="${r2}" fill="none" stroke="${arcColor}" stroke-width="4"
+        stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
+        stroke-linecap="round"
+        transform="rotate(-90 ${cx} ${cy})"/>
+      <text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="10"
+        font-weight="700" fill="${arcColor}">${pct}%</text>
+    </svg>`;
+
+  // Type tag
+  const typeClass = t.type?.includes("Intra")?"type-intra":
+    t.type?.includes("BTST")?"type-btst":t.type?.includes("STBT")?"type-stbt":
+    t.type?.includes("Option")?"type-opt":t.type?.includes("Positional")?"type-pos":"type-range";
+
+  // Signal bar fill
+  const signalPct  = conf;
+  const signalColor = arcColor;
+
+  // Safe copies for inline event handlers
+  const sym      = escAttr(r.symbol || "");
+  const tipType  = escAttr(t.type || "");
+  const fullText = escAttr(t.text || `${t.type} ${dir}\nEntry: ${t.entry}\nSL: ${t.sl}\nT1: ${t.target1}\nNote: ${t.note||""}`);
+
+  // Optional options row
+  const optHtml = t.strike
+    ? `<div style="font-size:10px;color:#BC8CFF;margin-bottom:4px">
+         Strike <b>${t.strike} ${t.opt_type||""}</b> · Expiry <b>${t.expiry||""}</b>
+       </div>`
+    : "";
+
+  return `
+    <div class="stip ${dirKey}">
+      <div class="stip-top">
+        <span class="stip-action ${dirKey}">${dirLbl}</span>
+        <span class="stip-type ${typeClass}">${esc(t.type||"")}</span>
+        <div class="stip-prob" title="Probability / Confidence">${arcSvg}</div>
+      </div>
+
+      <div class="signal-bar">
+        <div class="signal-fill" style="width:${signalPct}%;background:${signalColor}"></div>
+      </div>
+
+      ${optHtml}
+
+      <div class="stip-levels">
+        <div class="stip-lv">
+          <div class="stip-lv-lbl">Entry</div>
+          <div class="stip-lv-val stip-entry">${esc(String(t.entry))}</div>
+        </div>
+        <div class="stip-lv">
+          <div class="stip-lv-lbl">Stop Loss</div>
+          <div class="stip-lv-val stip-sl">${esc(String(t.sl))}</div>
+        </div>
+        <div class="stip-lv">
+          <div class="stip-lv-lbl">Target 1</div>
+          <div class="stip-lv-val stip-tgt">${esc(String(t.target1))}</div>
+        </div>
+        ${t.target2 ? `
+        <div class="stip-lv" style="grid-column:1/-1">
+          <div class="stip-lv-lbl">Target 2</div>
+          <div class="stip-lv-val stip-tgt">${esc(String(t.target2))}</div>
+        </div>` : ""}
+      </div>
+
+      ${rrHtml}
+
+      <div class="stip-note">${esc(t.note||"")}</div>
+
+      <div class="stip-actions">
+        <button class="stip-btn stip-btn-copy"
+          onclick="copyText(this,'${fullText}')">📋 Copy</button>
+        <button class="stip-btn stip-btn-log"
+          onclick="logSingleStd(this,'${sym}','${tipType}')">💾 Log</button>
+      </div>
+    </div>`;
+}
+
+// ── Standard renderer ─────────────────────────────────────────────────────────
+function renderStandardTips(results) {
+  const grid = document.getElementById("tipsGrid");
+  if (!results.length) { grid.innerHTML = `<div class="loading-card">No results</div>`; return; }
+
+  grid.innerHTML = results.map(r => {
+    if (r.error) return `
+      <div class="tip-card">
+        <div class="tip-card-head"><div class="tip-sym">${r.symbol}</div>
+          <div style="color:#F85149;font-size:12px">⚠ ${r.error}</div></div></div>`;
+
+    const biasCls   = r.bias==="bullish"?"bias-bull":r.bias==="bearish"?"bias-bear":"bias-neu";
+    const biasLabel = r.bias==="bullish"?"🟢 Bullish":r.bias==="bearish"?"🔴 Bearish":"🟡 Neutral";
+    const priceFmt  = r.price ? `₹${r.price.toLocaleString("en-IN",{minimumFractionDigits:2})}` : "—";
+    const lv        = r.levels || {};
+    const tipsHtml  = (r.tips||[]).map(t => buildStdRow(t)).join("");
+
+    return `
+      <div class="tip-card">
+        <div class="tip-card-head">
+          <div>
+            <span class="tip-sym">${r.symbol}</span>
+            <span class="bias-pill ${biasCls}">${biasLabel}</span>
+          </div>
+          <div style="text-align:right">
+            <div class="tip-price">${priceFmt}</div>
+            <div style="font-size:10px;color:#8B949E;margin-top:2px">${r.generated||""}</div>
+          </div>
+        </div>
+        <div class="tip-meta">
+          ${r.rsi       ? `<span>RSI <b>${Number(r.rsi).toFixed(1)}</b></span>` : ""}
+          ${r.atr       ? `<span>ATR <b>${r.atr}</b></span>` : ""}
+          ${r.vol_ratio ? `<span>Vol <b>${r.vol_ratio}x</b></span>` : ""}
+          ${lv.s1       ? `<span>S1 <b>${lv.s1}</b></span>` : ""}
+          ${lv.r1       ? `<span>R1 <b>${lv.r1}</b></span>` : ""}
+          ${r.st_bull !== undefined ? `<span>ST <b style="color:${r.st_bull?"#3FB950":"#F85149"}">${r.st_bull?"▲ Bull":"▼ Bear"}</b></span>` : ""}
+        </div>
+        <div class="tips-list">
+          ${tipsHtml || `<div style="color:#484F58;font-size:12px;text-align:center;padding:10px">No high-confidence tips at current levels</div>`}
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function buildStdRow(t) {
+  const typeClass = {
+    "Intraday":"type-intra","BTST":"type-btst","STBT":"type-stbt",
+    "Options – CE Buy":"type-opt","Options – PE Buy":"type-opt","Options – Straddle Sell":"type-opt"
+  }[t.type] || (t.type?.includes("Positional") ? "type-pos" : "type-range");
+  const dir    = t.direction || "";
+  const dirCls = dir.includes("BUY") ? "dir-buy" : dir.includes("SELL") || dir.includes("AVOID") ? "dir-sell" : "dir-neu";
+  const conf   = t.confidence || 50;
+  const confColor = conf>=70?"#3FB950":conf>=55?"#E3B341":"#F85149";
+  const tgt2   = t.target2 ? `<div class="tip-lv"><div class="tip-lv-lbl">T2</div><div class="tip-lv-val tgt-val">${t.target2}</div></div>` : "";
+  // Store full text for copy
+  const fullText = t.text || `${t.type} ${dir}\nEntry: ${t.entry}\nSL: ${t.sl}\nT1: ${t.target1}\n${t.note||""}`;
+  const safeText = escAttr(fullText);
+
+  return `
+    <div class="tip-row">
+      <div class="tip-row-head">
+        <span class="tip-type ${typeClass}">${t.type}</span>
+        <span class="dir-badge ${dirCls}">${dir}</span>
+        <div class="conf-bar"><div class="conf-fill" style="width:${conf}%;background:${confColor}"></div></div>
+        <span style="font-size:10px;color:${confColor};margin-left:4px;white-space:nowrap">${conf}%</span>
+        <button class="copy-btn" onclick="copyText(this,'${safeText}')">Copy</button>
+        <button class="log-btn" onclick="logSingleStd(this,'${escAttr(t.symbol)}','${escAttr(t.type)}')">📋 Log</button>
+      </div>
+      ${t.opt_type && t.strike ? `<div class="opt-strike">Strike: <b>${t.strike} ${t.opt_type}</b>  Expiry: <b>${t.expiry||""}</b></div>` : ""}
+      <div class="tip-levels">
+        <div class="tip-lv"><div class="tip-lv-lbl">Entry</div><div class="tip-lv-val entry-val">${t.entry}</div></div>
+        <div class="tip-lv"><div class="tip-lv-lbl">SL</div><div class="tip-lv-val sl-val">${t.sl}</div></div>
+        <div class="tip-lv"><div class="tip-lv-lbl">T1</div><div class="tip-lv-val tgt-val">${t.target1}</div></div>
+        ${tgt2}
+      </div>
+      <div class="tip-note">${esc(t.note||"")}</div>
+    </div>`;
+}
+
+// ── Pro Tips renderer ─────────────────────────────────────────────────────────
+function renderProTips(results) {
+  const grid = document.getElementById("tipsGrid");
+  if (!results.length) { grid.innerHTML = `<div class="loading-card">No results</div>`; return; }
+
+  grid.innerHTML = results.map(r => {
+    if (r.error) return `
+      <div class="pro-card">
+        <div class="pro-card-head"><span class="pro-card-sym">${r.symbol}</span>
+          <span style="color:#F85149;font-size:12px">⚠ ${r.error}</span></div></div>`;
+
+    const biasCls   = r.bias==="bullish"?"bias-bull":r.bias==="bearish"?"bias-bear":"bias-neu";
+    const biasLabel = r.bias==="bullish"?"🟢 Bullish":r.bias==="bearish"?"🔴 Bearish":"🟡 Neutral";
+    const priceFmt  = r.price ? `₹${r.price.toLocaleString("en-IN",{minimumFractionDigits:2})}` : "—";
+    const tipBody   = formatProText(r.tip_text || "");
+    const safeRaw   = escAttr(r.tip_text || "");
+    const sym       = escAttr(r.symbol || "");
+
+    return `
+      <div class="pro-card">
+        <div class="pro-card-head">
+          <div>
+            <span class="pro-card-sym">${r.symbol}</span>
+            <span class="bias-pill ${biasCls}" style="margin-left:8px">${biasLabel}</span>
+          </div>
+          <div class="pro-card-price">${priceFmt}</div>
+          <div class="pro-card-actions">
+            <button class="copy-btn" onclick="copyText(this,'${safeRaw}')">📋 Copy</button>
+            <button class="log-btn"  onclick="logProTip(this,'${sym}')">💾 Log</button>
+          </div>
+        </div>
+        <div class="pro-tip-body">${tipBody}</div>
+        <div class="pro-meta">
+          ${r.rsi       ? `<span>RSI ${Number(r.rsi).toFixed(1)}</span>` : ""}
+          ${r.atr       ? `<span>ATR ${r.atr}</span>` : ""}
+          ${r.vol_ratio ? `<span>Vol ${r.vol_ratio}x</span>` : ""}
+          ${r.st_bull !== undefined ? `<span>ST ${r.st_bull?"▲ Bull":"▼ Bear"}</span>` : ""}
+          <span style="margin-left:auto">${r.generated||""}</span>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+// Colour-code the pro tip text for the browser
+function formatProText(raw) {
+  if (!raw) return "";
+  return raw.split("\n").map(line => {
+    const t = line; // keep whitespace for pre-wrap
+    if (!t.trim()) return "";
+    const e = esc(t);
+    if (t.startsWith("#"))
+      return `<span style="color:#E3B341;font-weight:700;font-size:13px">${e}</span>`;
+    if (t.startsWith("➡️") || t.startsWith("->") || t.startsWith(">>"))
+      return `<span style="color:${t.includes("Buy")?"#3FB950":"#F85149"};font-weight:700">${e}</span>`;
+    if (t.includes("TGT") && t.includes("SL"))
+      return `<span style="color:#E3B341;font-weight:600">${e}</span>`;
+    if (t.startsWith("📍"))
+      return `<span style="color:#58A6FF">${e}</span>`;
+    if (t.startsWith("⚠"))
+      return `<span style="color:#484F58;font-size:11px">${e}</span>`;
+    return e;
+  }).join("\n");
+}
+
+// ── Logging helpers ───────────────────────────────────────────────────────────
+async function logProTip(btn, symbol) {
+  const r = _lastResults.find(x => x.symbol === symbol);
+  if (!r) return;
+  const setup = r.setup || {};
+  await saveTipsToLog([{
+    symbol:    r.symbol,
+    bias:      r.bias,
+    direction: setup.direction,
+    entry:     setup.entry,
+    sl:        setup.sl,
+    target1:   setup.tgt1,
+    target2:   setup.tgt2,
+    tip_text:  r.tip_text,
+    price:     r.price,
+    generated: r.generated,
+  }], "pro");
+  btn.textContent = "✓ Saved"; btn.classList.add("saved"); btn.disabled = true;
+  toast("Saved to log");
+}
+
+function logSingleStd(btn, symbol, tipType) {
+  const r = _lastResults.find(x => x.symbol === symbol);
+  if (!r) return;
+  const tip = (r.tips || []).find(t => t.type === tipType);
+  if (!tip) return;
+  saveTipsToLog([{
+    symbol:    r.symbol,
+    bias:      r.bias,
+    direction: tip.direction,
+    entry:     String(tip.entry),
+    sl:        String(tip.sl),
+    target1:   String(tip.target1),
+    target2:   String(tip.target2 || ""),
+    tip_text:  tip.text || tip.note || "",
+    price:     r.price,
+    generated: r.generated,
+  }], "standard").then(() => {
+    btn.textContent = "✓ Saved"; btn.classList.add("saved"); btn.disabled = true;
+    toast("Saved to log");
+  });
+}
+
+async function saveTipsToLog(tips, mode) {
+  try {
+    await fetch(`${API}/api/tips/log`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ tips, mode })
+    });
+  } catch(e) { console.warn("Log save failed:", e); }
+}
+
+// ── Log panel ─────────────────────────────────────────────────────────────────
+async function loadLog() {
+  const sym = document.getElementById("logFilter").value.trim().toUpperCase();
+  const url  = sym ? `${API}/api/tips/log?symbol=${sym}` : `${API}/api/tips/log?limit=200`;
+  try {
+    const d = await (await fetch(url)).json();
+    const rows = d.logs || [];
+    document.getElementById("logCount").textContent = `${rows.length} entries`;
+    const tbody = document.getElementById("logBody");
+    const empty = document.getElementById("logEmpty");
+    if (!rows.length) {
+      tbody.innerHTML = "";
+      empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+    tbody.innerHTML = rows.map(row => {
+      const biasCls = row.bias==="bullish"?"bull":row.bias==="bearish"?"bear":"neu";
+      const dirCls  = (row.direction||"").includes("BUY")?"bull":
+                      (row.direction||"").includes("SELL")?"bear":"neu";
+      const tipSnip = esc((row.tip_text||"").replace(/\n/g," ").substring(0,120));
+      const safeText = escAttr(row.tip_text || "");
+      return `
+        <tr>
+          <td style="white-space:nowrap;color:#484F58">${row.logged_at||""}</td>
+          <td class="sym">${esc(row.symbol||"")}</td>
+          <td><span style="font-size:10px;color:#8B949E">${esc(row.mode||"")}</span></td>
+          <td class="${biasCls}">${esc(row.bias||"")}</td>
+          <td class="${dirCls}">${esc(row.direction||"")}</td>
+          <td>${esc(row.entry||"")}</td>
+          <td style="color:#F85149">${esc(row.sl||"")}</td>
+          <td style="color:#3FB950">${esc(row.target1||"")}</td>
+          <td style="color:#3FB950">${esc(row.target2||"")}</td>
+          <td>₹${row.price||""}</td>
+          <td><div class="log-row-tip" title="${escAttr(row.tip_text||"")}">${tipSnip}</div></td>
+          <td style="white-space:nowrap">
+            <button class="log-copy" onclick="copyText(this,'${safeText}')">Copy</button>
+            <button class="log-del"  onclick="deleteLog(${row.id},this)">✕</button>
+          </td>
+        </tr>`;
+    }).join("");
+  } catch(e) {
+    document.getElementById("logBody").innerHTML =
+      `<tr><td colspan="12" style="color:#F85149;padding:12px">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function deleteLog(id, btn) {
+  await fetch(`${API}/api/tips/log/${id}`, { method: "DELETE" });
+  btn.closest("tr").remove();
+  toast("Deleted");
+}
+
+async function clearLog() {
+  if (!confirm("Clear all tips log entries?")) return;
+  await fetch(`${API}/api/tips/log/clear`, { method: "POST" });
+  loadLog();
+  toast("Log cleared");
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;");
+}
+function escAttr(s) {
+  return String(s)
+    .replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/\n/g,"\\n").replace(/\r/g,"");
+}
+
+function copyText(btn, raw) {
+  // raw may have JS escape sequences — unescape newlines
+  const text = raw.replace(/\\n/g,"\n").replace(/\\'/g,"'").replace(/\\\\/g,"\\");
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = "✓ Copied!"; btn.style.color = "#3FB950";
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ""; }, 2000);
+  });
+}
+
+function toast(msg, duration=2000) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), duration);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadPreset("indices", document.querySelector(".tag.active"));
+runTips();
+</script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alerts — StockIQ</title>
+<link rel="stylesheet" href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 20px;display:flex;align-items:center;gap:24px;height:52px}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:16px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.container{max-width:1200px;margin:0 auto;padding:20px;display:grid;grid-template-columns:360px 1fr;gap:16px}
+.card{background:#161B22;border:1px solid #30363D;border-radius:8px;padding:16px}
+.card h3{font-size:11px;color:#8B949E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+input,select{background:#0D1117;border:1px solid #30363D;border-radius:6px;padding:7px 10px;color:#E6EDF3;font-size:13px;outline:none;width:100%}
+input:focus,select:focus{border-color:#58A6FF}
+.btn{border:none;border-radius:6px;padding:8px 16px;color:#fff;cursor:pointer;font-size:13px;font-weight:600}
+.btn.green{background:#238636}.btn.green:hover{background:#2EA043}
+.btn.red{background:#B91C1C}.btn.red:hover{background:#DC2626}
+.btn.blue{background:#1F6FEB}.btn.blue:hover{background:#388BFD}
+.btn.ghost{background:#21262D;border:1px solid #30363D;color:#8B949E}.btn.ghost:hover{background:#30363D;color:#E6EDF3}
+.btn.small{padding:4px 10px;font-size:12px}
+.form-row{margin-bottom:10px}
+.form-row label{display:block;font-size:11px;color:#8B949E;margin-bottom:4px}
+.badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-buy   {background:#1A3A2A;color:#3FB950}
+.badge-sell  {background:#3A1A1A;color:#F85149}
+.badge-hold  {background:#2A2A1A;color:#E3B341}
+.badge-rsi   {background:#1A2A3A;color:#58A6FF}
+.badge-vol   {background:#2A1A3A;color:#BC8CFF}
+.badge-fired {background:#3A1A1A;color:#F85149}
+.badge-ok    {background:#1A3A2A;color:#3FB950}
+.badge-off   {background:#21262D;color:#8B949E}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#21262D;padding:8px 10px;text-align:left;color:#8B949E;font-weight:600;border-bottom:1px solid #30363D}
+td{padding:8px 10px;border-bottom:1px solid #21262D;vertical-align:middle}
+tr:hover td{background:#1C2128}
+.up{color:#3FB950}.down{color:#F85149}.neutral{color:#8B949E}
+.alert-fired-row td{background:rgba(248,81,73,0.06)}
+.empty{color:#8B949E;padding:24px;text-align:center;font-size:13px}
+.tabs{display:flex;border-bottom:1px solid #30363D;margin-bottom:16px}
+.tab{padding:7px 14px;cursor:pointer;color:#8B949E;font-size:12px;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:#58A6FF;border-bottom-color:#58A6FF}
+.tab:hover{color:#E6EDF3}
+.tab-content{display:none}.tab-content.active{display:block}
+#toastContainer{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:#161B22;border:1px solid #30363D;border-radius:8px;padding:10px 16px;font-size:13px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.5);animation:slideIn .3s ease;min-width:240px;max-width:340px}
+.toast.success{border-left:3px solid #3FB950}
+.toast.error  {border-left:3px solid #F85149}
+.toast.info   {border-left:3px solid #58A6FF}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+</style>
+</head>
+<body>
+<nav>
+  <span class="logo"><img src="img/logo.png"/> StockIQ</span>
+  <a href="/">Hub<!-- Dashboard --></a>
+  <a href="/screener.html">Scan<!-- Screener --></a>
+  <a href="/tips.html"><!-- 💡 -->Tips<!-- Tips --></a>
+  <a href="/chart.html">Chart<!-- Charts --></a>
+  <a href="/options.html">Opts<!-- Options --></a>
+  <a href="/heatmap.html">Map<!-- Heatmap --></a>
+  <a href="/alerts.html" class="active"><!-- 🔔 --> Alert<!-- Alters --></a>
+  <a href="/intel.html"><!-- 🧠 --> Algo<!-- Logic --></a>
+  <a href="/gap-scanner.html"><!-- 📈 --> Gap<!-- Gaps --></a>
+  <a href="/backtester.html"><!-- 🧪 --> Test<!-- Backtest --></a>
+  <a href="/briefing.html"><!-- 📋 --> Brief<!-- Briefing --></a>
+  <a href="/corp-actions.html">Corp</a>
+  <a href="/notes.html">Log<!-- Notes --></a>
+  <a href="/premium.html" style="color:#E3B341">⭐ Premium</a>
+  <a href="/settings.html" style="margin-left:auto">⚙ Settings</a>
+</nav>
+
+<div class="container">
+  <!-- LEFT: Create Alert -->
+  <div>
+    <div class="card">
+      <h3>Create Alert</h3>
+      <div class="form-row">
+        <label>Symbol</label>
+        <input id="fSymbol" type="text" placeholder="e.g. RELIANCE, NIFTY" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div class="form-row">
+        <label>Alert Type</label>
+        <select id="fType" onchange="onTypeChange()">
+          <option value="price_above">Price Rises Above</option>
+          <option value="price_below">Price Falls Below</option>
+          <option value="rsi_above">RSI Rises Above</option>
+          <option value="rsi_below">RSI Falls Below</option>
+          <option value="vol_spike">Volume Spike (× avg)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label id="fValueLabel">Target Price (₹)</label>
+        <input id="fValue" type="number" step="any" placeholder="e.g. 2500">
+      </div>
+      <div class="form-row">
+        <label>Note (optional)</label>
+        <input id="fNote" type="text" placeholder="e.g. Breakout above resistance">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn green" style="flex:1" onclick="createAlert()">+ Add Alert</button>
+        <button class="btn ghost small" onclick="clearForm()">Clear</button>
+      </div>
+    </div>
+
+    <!-- Quick Add shortcuts -->
+    <div class="card" style="margin-top:16px">
+      <h3>Quick Add</h3>
+      <div style="font-size:12px;color:#8B949E;margin-bottom:10px">Click to pre-fill the form</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn ghost small" style="text-align:left" onclick="quickFill('price_above', 'RSI Overbought target')">📈 Price rises above current + 2%</button>
+        <button class="btn ghost small" style="text-align:left" onclick="quickFill('price_below', 'Stop-loss trigger')">📉 Price falls below current − 2%</button>
+        <button class="btn ghost small" style="text-align:left" onclick="quickFillRSI('rsi_above', 70, 'RSI Overbought')">⚡ RSI crosses above 70 (Overbought)</button>
+        <button class="btn ghost small" style="text-align:left" onclick="quickFillRSI('rsi_below', 30, 'RSI Oversold')">⚡ RSI falls below 30 (Oversold)</button>
+        <button class="btn ghost small" style="text-align:left" onclick="quickFillVol()">🔊 Volume spike ≥ 2× average</button>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="card" style="margin-top:16px">
+      <h3>Fired History <span id="histCount" style="color:#58A6FF;font-weight:700"></span></h3>
+      <div id="histList" class="empty">No alerts fired yet</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Active Alerts + All -->
+  <div>
+    <div class="card">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('active')">Active <span id="activeCount" style="color:#58A6FF;margin-left:4px">0</span></div>
+        <div class="tab" onclick="switchTab('all')">All Alerts <span id="allCount" style="color:#8B949E;margin-left:4px">0</span></div>
+      </div>
+
+      <div id="tab-active" class="tab-content active">
+        <div id="activeTable"><div class="empty">No active alerts</div></div>
+      </div>
+      <div id="tab-all" class="tab-content">
+        <div id="allTable"><div class="empty">No alerts yet</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script>
+const API = "";
+let allAlerts  = [];
+let allHistory = [];
+let currentTab = "active";
+
+const TYPE_LABELS = {
+  price_above: "Price ↑ Above",
+  price_below: "Price ↓ Below",
+  rsi_above:   "RSI ↑ Above",
+  rsi_below:   "RSI ↓ Below",
+  vol_spike:   "Vol Spike ≥",
+};
+const TYPE_BADGE = {
+  price_above: "badge-buy",
+  price_below: "badge-sell",
+  rsi_above:   "badge-rsi",
+  rsi_below:   "badge-rsi",
+  vol_spike:   "badge-vol",
+};
+const TYPE_UNIT = {
+  price_above: "₹",
+  price_below: "₹",
+  rsi_above:   "",
+  rsi_below:   "",
+  vol_spike:   "×",
+};
+
+function onTypeChange() {
+  const t = document.getElementById("fType").value;
+  const labels = {
+    price_above: "Target Price (₹)",
+    price_below: "Target Price (₹)",
+    rsi_above:   "RSI Value (0-100)",
+    rsi_below:   "RSI Value (0-100)",
+    vol_spike:   "Volume Multiplier (e.g. 2)",
+  };
+  document.getElementById("fValueLabel").textContent = labels[t] || "Value";
+}
+
+function quickFill(type, note) {
+  const sym = prompt("Enter symbol:", "RELIANCE");
+  if (!sym) return;
+  document.getElementById("fSymbol").value = sym.toUpperCase();
+  document.getElementById("fType").value   = type;
+  onTypeChange();
+  // Need price to compute +/-2%
+  fetch(`${API}/api/quote/${sym.toUpperCase()}`).then(r=>r.json()).then(q=>{
+    const p = q.price || 0;
+    const val = type === "price_above" ? +(p * 1.02).toFixed(2) : +(p * 0.98).toFixed(2);
+    document.getElementById("fValue").value = val;
+    document.getElementById("fNote").value  = note;
+  });
+}
+
+function quickFillRSI(type, val, note) {
+  const sym = prompt("Enter symbol:", "NIFTY50");
+  if (!sym) return;
+  document.getElementById("fSymbol").value = sym.toUpperCase();
+  document.getElementById("fType").value   = type;
+  onTypeChange();
+  document.getElementById("fValue").value = val;
+  document.getElementById("fNote").value  = note;
+}
+
+function quickFillVol() {
+  const sym = prompt("Enter symbol:", "RELIANCE");
+  if (!sym) return;
+  document.getElementById("fSymbol").value = sym.toUpperCase();
+  document.getElementById("fType").value   = "vol_spike";
+  onTypeChange();
+  document.getElementById("fValue").value = 2;
+  document.getElementById("fNote").value  = "Unusual volume activity";
+}
+
+function clearForm() {
+  ["fSymbol","fValue","fNote"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("fType").value = "price_above";
+  onTypeChange();
+}
+
+async function createAlert() {
+  const sym   = document.getElementById("fSymbol").value.trim().toUpperCase();
+  const type  = document.getElementById("fType").value;
+  const value = parseFloat(document.getElementById("fValue").value);
+  const note  = document.getElementById("fNote").value.trim();
+
+  if (!sym)       { toast("Enter a symbol", "error"); return; }
+  if (isNaN(value)) { toast("Enter a valid value", "error"); return; }
+
+  try {
+    const r = await fetch(`${API}/api/alerts`, {
+      method:  "POST",
+      headers: {"Content-Type":"application/json"},
+      body:    JSON.stringify({symbol: sym, type, value, note})
+    });
+    if (!r.ok) { const e = await r.json(); toast(e.error || "Failed", "error"); return; }
+    toast(`Alert created for ${sym}`, "success");
+    clearForm();
+    loadAlerts();
+  } catch(e) {
+    toast("Network error: " + e.message, "error");
+  }
+}
+
+async function deleteAlert(id) {
+  if (!confirm("Delete this alert?")) return;
+  await fetch(`${API}/api/alerts/${id}`, {method:"DELETE"});
+  toast("Alert deleted", "info");
+  loadAlerts();
+}
+
+async function toggleAlert(id, enabled) {
+  await fetch(`${API}/api/alerts/${id}/toggle`, {
+    method:  "POST",
+    headers: {"Content-Type":"application/json"},
+    body:    JSON.stringify({enabled})
+  });
+  loadAlerts();
+}
+
+async function resetAlert(id) {
+  await fetch(`${API}/api/alerts/${id}/reset`, {method:"POST"});
+  toast("Alert re-armed", "info");
+  loadAlerts();
+}
+
+function switchTab(name) {
+  currentTab = name;
+  document.querySelectorAll(".tab").forEach((t,i)=>{
+    t.classList.toggle("active", ["active","all"][i] === name);
+  });
+  document.querySelectorAll(".tab-content").forEach(t=>t.classList.remove("active"));
+  document.getElementById(`tab-${name}`).classList.add("active");
+}
+
+function fmtDate(s) {
+  if (!s) return "—";
+  try { return new Date(s).toLocaleString("en-IN", {timeZone:"Asia/Kolkata",hour12:false}); }
+  catch(e) { return s.slice(0,16); }
+}
+
+function alertRowHTML(a) {
+  const unit   = TYPE_UNIT[a.type]  || "";
+  const prefix = (unit === "₹") ? "₹" : "";
+  const suffix = (unit === "×") ? "×" : "";
+  const valStr = `${prefix}${a.value}${suffix}`;
+  const badge  = TYPE_BADGE[a.type] || "badge-hold";
+  const statusBadge = a.triggered
+    ? `<span class="badge badge-fired">Fired</span>`
+    : a.enabled
+      ? `<span class="badge badge-ok">Active</span>`
+      : `<span class="badge badge-off">Paused</span>`;
+
+  return `<tr class="${a.triggered ? "alert-fired-row" : ""}">
+    <td style="font-weight:600;color:#58A6FF">${a.symbol}</td>
+    <td><span class="badge ${badge}">${TYPE_LABELS[a.type] || a.type}</span></td>
+    <td style="font-weight:700">${valStr}</td>
+    <td style="color:#8B949E;font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis">${a.note || "—"}</td>
+    <td>${statusBadge}</td>
+    <td style="color:#8B949E;font-size:11px">${fmtDate(a.created_at)}</td>
+    <td>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${a.triggered
+          ? `<button class="btn ghost small" onclick="resetAlert(${a.id})">↺ Re-arm</button>`
+          : a.enabled
+            ? `<button class="btn ghost small" onclick="toggleAlert(${a.id},false)">⏸ Pause</button>`
+            : `<button class="btn blue small" onclick="toggleAlert(${a.id},true)">▶ Enable</button>`
+        }
+        <button class="btn red small" onclick="deleteAlert(${a.id})">✕</button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+function tableHTML(rows) {
+  if (!rows.length) return `<div class="empty">No alerts found</div>`;
+  return `<div style="overflow-x:auto"><table>
+    <thead><tr>
+      <th>Symbol</th><th>Type</th><th>Value</th><th>Note</th>
+      <th>Status</th><th>Created</th><th>Actions</th>
+    </tr></thead>
+    <tbody>${rows.map(alertRowHTML).join("")}</tbody>
+  </table></div>`;
+}
+
+async function loadAlerts() {
+  try {
+    const r = await fetch(`${API}/api/alerts`);
+    allAlerts = await r.json();
+  } catch(e) { allAlerts = []; }
+
+  const active = allAlerts.filter(a => a.enabled && !a.triggered);
+  document.getElementById("activeCount").textContent = active.length;
+  document.getElementById("allCount").textContent    = allAlerts.length;
+  document.getElementById("activeTable").innerHTML   = tableHTML(active);
+  document.getElementById("allTable").innerHTML      = tableHTML(allAlerts);
+}
+
+async function loadHistory() {
+  try {
+    const r = await fetch(`${API}/api/alerts/history?limit=20`);
+    allHistory = await r.json();
+  } catch(e) { allHistory = []; }
+
+  document.getElementById("histCount").textContent = allHistory.length || "";
+  if (!allHistory.length) {
+    document.getElementById("histList").innerHTML = `<div class="empty">No alerts fired yet</div>`;
+    return;
+  }
+  document.getElementById("histList").innerHTML = allHistory.map(h => `
+    <div style="border-bottom:1px solid #21262D;padding:7px 2px;font-size:12px">
+      <div style="display:flex;justify-content:space-between">
+        <span style="font-weight:600;color:#58A6FF">${h.symbol}</span>
+        <span class="badge badge-fired">Fired</span>
+      </div>
+      <div style="color:#8B949E;margin-top:3px">
+        ${TYPE_LABELS[h.type] || h.type} <strong>${h.type.includes("price")?"₹":""}${h.value}${h.type==="vol_spike"?"×":""}</strong>
+        at price ₹${h.price_at ? h.price_at.toFixed(2) : "—"}
+      </div>
+      <div style="color:#8B949E;font-size:11px;margin-top:2px">${fmtDate(h.fired_at)}</div>
+    </div>`).join("");
+}
+
+// ── Toast notification ────────────────────────────────────────────────────────
+function toast(msg, type="info") {
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById("toastContainer").appendChild(el);
+  setTimeout(() => { el.style.opacity="0"; el.style.transition="opacity .5s"; setTimeout(()=>el.remove(), 500); }, 3500);
+}
+
+// ── Poll for fired alerts every 15s ──────────────────────────────────────────
+let _lastFiredIds = new Set();
+async function pollFired() {
+  try {
+    const r = await fetch(`${API}/api/alerts/history?limit=5`);
+    const hist = await r.json();
+    hist.forEach(h => {
+      if (!_lastFiredIds.has(h.id)) {
+        _lastFiredIds.add(h.id);
+        toast(`🔔 ${h.symbol}: ${TYPE_LABELS[h.type]} ${h.type.includes("price")?"₹":""}${h.value}${h.type==="vol_spike"?"×":""}`, "error");
+        loadAlerts();
+        loadHistory();
+      }
+    });
+  } catch(e) {}
+}
+
+// Init
+loadAlerts();
+loadHistory();
+setInterval(pollFired, 15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corporate Actions — StockIQ</title>
+<link rel="stylesheet" href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#30363D;border-radius:4px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 16px;display:flex;align-items:center;gap:16px;height:52px;flex-wrap:wrap}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:8px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent;text-decoration:none;white-space:nowrap}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.page{max-width:1400px;margin:0 auto;padding:16px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;
+  background:#161B22;border:1px solid #30363D;border-radius:8px;padding:10px 14px}
+.tag-group{display:flex;gap:4px;flex-wrap:wrap}
+.tag{background:#21262D;border:1px solid #30363D;border-radius:4px;padding:3px 10px;
+  color:#8B949E;cursor:pointer;font-size:11px;white-space:nowrap}
+.tag:hover{border-color:#58A6FF;color:#E6EDF3}
+.sym-input{background:#0D1117;border:1px solid #30363D;border-radius:6px;padding:6px 10px;
+  color:#E6EDF3;font-size:13px;outline:none;width:160px;text-transform:uppercase}
+.sym-input:focus{border-color:#58A6FF}
+.btn{border:none;border-radius:6px;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:600}
+.btn-blue{background:#1F6FEB;color:#fff}.btn-blue:hover{background:#388BFD}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:12px}
+.card{background:#161B22;border:1px solid #30363D;border-radius:8px;overflow:hidden}
+.card-head{padding:12px 14px 8px;border-bottom:1px solid #21262D;font-size:13px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.5px;color:#8B949E}
+.card-body{padding:6px 14px 12px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;color:#8B949E;font-weight:600;padding:8px 6px;border-bottom:1px solid #30363D;white-space:nowrap}
+td{padding:7px 6px;border-bottom:1px solid #21262D;vertical-align:top}
+tr:last-child td{border-bottom:none}
+.kind{display:inline-block;padding:1px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.kind-dividend{background:#1A3A2A;color:#3FB950}
+.kind-split{background:#1C2F4A;color:#58A6FF}
+.kind-bonus{background:#2A2A1A;color:#E3B341}
+.kind-other{background:#21262D;color:#8B949E}
+.summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.stat{background:#161B22;border:1px solid #30363D;border-radius:8px;padding:10px 16px;flex:1;min-width:140px}
+.stat .lbl{font-size:10px;color:#8B949E;text-transform:uppercase;letter-spacing:.4px}
+.stat .val{font-size:17px;font-weight:700;margin-top:2px}
+.loading-card{background:#161B22;border:1px solid #30363D;border-radius:8px;
+  padding:40px;text-align:center;color:#8B949E;grid-column:1/-1}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #30363D;
+  border-top-color:#58A6FF;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.note{font-size:11px;color:#8B949E;padding:8px 14px}
+.note.warn{color:#E3B341}
+.empty{color:#484F58;font-size:12px;padding:14px 6px;text-align:center}
+</style>
+</head>
+<body>
+<nav>
+  <span class="logo">StockIQ</span>
+  <a href="/">Hub</a>
+  <a href="/screener.html">Scan</a>
+  <a href="/tips.html">Tips</a>
+  <a href="/chart.html">Chart</a>
+  <a href="/options.html">Opts</a>
+  <a href="/heatmap.html">Map</a>
+  <a href="/alerts.html">Alert</a>
+  <a href="/intel.html">Algo</a>
+  <a href="/gap-scanner.html">Gap</a>
+  <a href="/backtester.html">Test</a>
+  <a href="/briefing.html">Brief</a>
+  <a href="/corp-actions.html" class="active">Corp</a>
+  <a href="/notes.html">Log</a>
+  <a href="/premium.html" style="color:#E3B341">⭐ Premium</a>
+  <a href="/settings.html" style="margin-left:auto">⚙ Settings</a>
+</nav>
+
+<div class="page">
+  <div class="toolbar">
+    <div style="font-size:11px;color:#8B949E;white-space:nowrap">Symbol:</div>
+    <input class="sym-input" id="symInput" placeholder="RELIANCE" value="RELIANCE"
+      onkeydown="if(event.key==='Enter') lookup()">
+    <button class="btn btn-blue" onclick="lookup()" id="goBtn">Lookup</button>
+    <div style="height:24px;width:1px;background:#30363D;margin:0 4px"></div>
+    <div class="tag-group" id="quickTags"></div>
+  </div>
+
+  <div class="summary" id="summary" style="display:none"></div>
+
+  <div class="grid" id="grid">
+    <div class="loading-card">Enter a symbol and click Lookup</div>
+  </div>
+  <div class="note" id="notes"></div>
+</div>
+
+<script>
+const API = "";
+const QUICK = ["RELIANCE","HDFCBANK","INFY","TCS","ITC","SBIN","COALINDIA","IOC"];
+
+document.getElementById('quickTags').innerHTML =
+  QUICK.map(s => `<div class="tag" onclick="quick('${s}')">${s}</div>`).join('');
+
+function quick(s){
+  document.getElementById('symInput').value = s;
+  lookup();
+}
+
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"]/g,
+    c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+}
+
+function tbl(rows, cols){
+  if(!rows.length) return '<div class="empty">None found</div>';
+  let h = '<table><tr>' + cols.map(c => `<th>${c[1]}</th>`).join('') + '</tr>';
+  rows.forEach(r => {
+    h += '<tr>' + cols.map(c => `<td>${c[2] ? c[2](r) : esc(r[c[0]])}</td>`).join('') + '</tr>';
+  });
+  return h + '</table>';
+}
+
+async function lookup(){
+  const sym = document.getElementById('symInput').value.trim().toUpperCase();
+  if(!sym) return;
+  const btn = document.getElementById('goBtn');
+  btn.textContent = '⏳ Loading...';
+  btn.disabled = true;
+  document.getElementById('grid').innerHTML =
+    '<div class="loading-card"><span class="spinner"></span>Fetching corporate actions...</div>';
+  document.getElementById('notes').innerHTML = '';
+  document.getElementById('summary').style.display = 'none';
+
+  try{
+    const r = await fetch(`${API}/api/corporate/${encodeURIComponent(sym)}`);
+    const d = await r.json();
+    if(d.error){ throw new Error(d.error); }
+    render(d);
+  }catch(e){
+    document.getElementById('grid').innerHTML =
+      `<div class="loading-card" style="color:#F85149">Error: ${esc(e.message)}</div>`;
+  }
+  btn.textContent = 'Lookup';
+  btn.disabled = false;
+}
+
+function render(d){
+  const s = document.getElementById('summary');
+  const next = (d.upcoming && d.upcoming[0]) || null;
+  s.style.display = 'flex';
+  s.innerHTML = `
+    <div class="stat"><div class="lbl">${esc(d.symbol)} price</div>
+      <div class="val">₹${d.last_price != null ? d.last_price : '—'}</div></div>
+    <div class="stat"><div class="lbl">TTM dividend</div>
+      <div class="val" style="color:#3FB950">₹${d.ttm_dividend}</div></div>
+    <div class="stat"><div class="lbl">Yield</div>
+      <div class="val">${d.yield_pct != null ? d.yield_pct + '%' : '—'}</div></div>
+    <div class="stat"><div class="lbl">Next event</div>
+      <div class="val" style="font-size:13px">${next ? esc(next.exDate) + ' · ' + esc(next.subject).slice(0,34) : '—'}</div></div>`;
+
+  const kname = k => `<span class="kind kind-${k}">${k.toUpperCase()}</span>`;
+  const grid = document.getElementById('grid');
+  grid.innerHTML = `
+    <div class="card"><div class="card-head">📅 Upcoming (NSE)</div><div class="card-body">
+      ${tbl(d.upcoming || [], [["exDate","Ex-date"],["subject","Event"],["recordDate","Record date"]])}
+    </div></div>
+    <div class="card"><div class="card-head">💰 Dividends (2y)</div><div class="card-body">
+      ${tbl(d.dividends || [], [["date","Date"],["amount","Amount", r => '₹' + r.amount]])}
+    </div></div>
+    <div class="card"><div class="card-head">✂️ Splits (2y)</div><div class="card-body">
+      ${tbl(d.splits || [], [["date","Date"],["ratio","Ratio"]])}
+      <div class="note">Yahoo lists bonus issues as splits too — check Bonus for confirmed NSE bonus records.</div>
+    </div></div>
+    <div class="card"><div class="card-head">🎁 Bonus (NSE)</div><div class="card-body">
+      ${tbl(d.bonus || [], [["exDate","Ex-date"],["subject","Event"],["recordDate","Record date"]])}
+    </div></div>`;
+
+  const n = document.getElementById('notes');
+  n.innerHTML = (d.notes || []).map(x =>
+    `<div class="note warn">⚠ ${esc(x)}</div>`).join('');
+}
+
+const preset = new URLSearchParams(location.search).get('sym');
+if(preset){ document.getElementById('symInput').value = preset.toUpperCase(); lookup(); }
+</script>
+</body>
+</html>

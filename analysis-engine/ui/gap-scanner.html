@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gap Scanner — StockIQ</title>
+<link rel="stylesheet" href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 20px;display:flex;align-items:center;gap:20px;height:52px;flex-wrap:wrap}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:12px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent;text-decoration:none;white-space:nowrap}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.page{max-width:1200px;margin:0 auto;padding:20px}
+.card{background:#161B22;border:1px solid #30363D;border-radius:8px;padding:16px;margin-bottom:14px}
+.card h3{font-size:11px;color:#8B949E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.btn{border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600}
+.btn-green{background:#238636;color:#fff}.btn-green:hover{background:#2ea043}
+.btn-ghost{background:#21262D;border:1px solid #30363D;color:#8B949E}.btn-ghost:hover{background:#30363D;color:#E6EDF3}
+select,input[type=number]{background:#0D1117;border:1px solid #30363D;border-radius:6px;padding:7px 10px;color:#E6EDF3;font-size:13px;outline:none}
+select:focus,input:focus{border-color:#58A6FF}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#21262D;padding:8px 12px;text-align:left;color:#8B949E;font-weight:600;border-bottom:1px solid #30363D;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid #21262D;white-space:nowrap}
+tr:hover td{background:#1C2128}
+.up{color:#3FB950}.down{color:#F85149}.neutral{color:#8B949E}
+.badge-up  {background:#1A3A2A;color:#3FB950;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700}
+.badge-down{background:#3A1A1A;color:#F85149;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700}
+.sym-link{color:#58A6FF;cursor:pointer;font-weight:600}.sym-link:hover{text-decoration:underline}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid #30363D;border-top-color:#58A6FF;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:4px}
+.stat-card{background:#0D1117;border-radius:6px;padding:10px 12px;text-align:center}
+.stat-val{font-size:22px;font-weight:800}
+.stat-lbl{font-size:10px;color:#8B949E;margin-top:3px}
+.bar-wrap{height:6px;background:#21262D;border-radius:3px;overflow:hidden;margin-top:4px}
+.bar{height:6px;border-radius:3px}
+</style>
+</head>
+<body>
+<nav>
+  <span class="logo"><img src="img/logo.png"/> StockIQ</span>
+  <a href="/">Hub<!-- Dashboard --></a>
+  <a href="/screener.html">Scan<!-- Screener --></a>
+  <a href="/tips.html"><!-- 💡 -->Tips<!-- Tips --></a>
+  <a href="/chart.html">Chart<!-- Charts --></a>
+  <a href="/options.html">Opts<!-- Options --></a>
+  <a href="/heatmap.html">Map<!-- Heatmap --></a>
+  <a href="/alerts.html"><!-- 🔔 --> Alert<!-- Alters --></a>
+  <a href="/intel.html"><!-- 🧠 --> Algo<!-- Logic --></a>
+  <a href="/gap-scanner.html" class="active"><!-- 📈 --> Gap<!-- Gaps --></a>
+  <a href="/backtester.html"><!-- 🧪 --> Test<!-- Backtest --></a>
+  <a href="/briefing.html"><!-- 📋 --> Brief<!-- Briefing --></a>
+  <a href="/corp-actions.html">Corp</a>
+  <a href="/notes.html">Log<!-- Notes --></a>
+  <a href="/settings.html" style="margin-left:auto">⚙ Settings</a>
+</nav>
+
+<div class="page">
+  <!-- Controls -->
+  <div class="card">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div>
+        <label style="font-size:11px;color:#8B949E;display:block;margin-bottom:4px">Min Gap %</label>
+        <input type="number" id="minGap" value="1.5" step="0.5" min="0.5" style="width:90px">
+      </div>
+      <div>
+        <label style="font-size:11px;color:#8B949E;display:block;margin-bottom:4px">Universe</label>
+        <select id="universe">
+          <option value="N50">Nifty 50</option>
+          <option value="ALL">All Symbols (~100)</option>
+        </select>
+      </div>
+      <div style="margin-top:18px">
+        <button class="btn btn-green" onclick="runScanner()">▶ Scan Now</button>
+        <button class="btn btn-ghost" style="margin-left:8px" onclick="scheduleAuto()">⏰ Auto at 09:00</button>
+      </div>
+      <div id="scanStatus" style="margin-top:18px;font-size:12px;color:#8B949E"></div>
+    </div>
+  </div>
+
+  <!-- Stats summary -->
+  <div id="statsRow" style="display:none;margin-bottom:14px">
+    <div class="stat-grid" id="statsGrid"></div>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3>Gap Results <span id="resultCount" style="color:#58A6FF;font-weight:700;text-transform:none;letter-spacing:0"></span></h3>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="filterDir('ALL')">All</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;color:#3FB950" onclick="filterDir('UP')">▲ Gap Up</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;color:#F85149" onclick="filterDir('DOWN')">▼ Gap Down</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="exportCSV()">Export CSV</button>
+      </div>
+    </div>
+    <div id="resultsWrap">
+      <div style="color:#8B949E;padding:30px;text-align:center">Click "Scan Now" to find gap stocks.<br>
+        <span style="font-size:11px">Best run at 09:15 AM after market opens — shows pre-market vs open price gaps.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule info -->
+  <div id="autoInfo" style="display:none" class="card">
+    <h3>⏰ Auto Scan Scheduled</h3>
+    <p style="font-size:12px;color:#8B949E">Will auto-scan at 09:15 AM IST and refresh every 5 minutes until 09:45 AM. Keep this page open.</p>
+    <button class="btn btn-ghost" style="margin-top:10px;font-size:12px" onclick="cancelAuto()">✕ Cancel</button>
+  </div>
+</div>
+
+<script>
+const API = "";
+let _allResults = [];
+let _autoTimer  = null;
+let _autoInterval = null;
+
+async function runScanner(){
+  const minGap   = parseFloat(document.getElementById('minGap').value) || 1.5;
+  const universe = document.getElementById('universe').value;
+  const status   = document.getElementById('scanStatus');
+  const wrap     = document.getElementById('resultsWrap');
+
+  status.innerHTML = '<span class="spinner"></span>Scanning...';
+  wrap.innerHTML   = '<div style="color:#8B949E;padding:30px;text-align:center"><span class="spinner"></span>Scanning stocks...</div>';
+
+  try{
+    const r = await fetch(`${API}/api/gap-scanner?min_gap=${minGap}&symbols=${universe}`);
+    const d = await r.json();
+    _allResults = d.results || [];
+
+    status.textContent = `✓ Scanned ${d.scanned} stocks in universe — ${d.count} gaps ≥ ${minGap}%`;
+    document.getElementById('resultCount').textContent = `(${d.count} found)`;
+
+    renderStats(d);
+    renderTable(_allResults);
+  }catch(e){
+    status.textContent = 'Error: ' + e.message;
+    wrap.innerHTML = `<div style="color:#F85149;padding:20px">Error: ${e.message}</div>`;
+  }
+}
+
+function renderStats(d){
+  const res = d.results || [];
+  const up   = res.filter(r=>r.direction==='UP');
+  const down = res.filter(r=>r.direction==='DOWN');
+  const maxG = res.length ? Math.max(...res.map(r=>r.abs_gap)) : 0;
+
+  document.getElementById('statsRow').style.display = 'block';
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-val up">${up.length}</div>
+      <div class="stat-lbl">Gap Up ▲</div>
+      <div class="bar-wrap"><div class="bar" style="background:#3FB950;width:${d.count?up.length/d.count*100:0}%"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val down">${down.length}</div>
+      <div class="stat-lbl">Gap Down ▼</div>
+      <div class="bar-wrap"><div class="bar" style="background:#F85149;width:${d.count?down.length/d.count*100:0}%"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:#E3B341">${maxG.toFixed(1)}%</div>
+      <div class="stat-lbl">Largest Gap</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">${d.scanned}</div>
+      <div class="stat-lbl">Stocks Scanned</div>
+    </div>`;
+}
+
+function renderTable(rows){
+  const wrap = document.getElementById('resultsWrap');
+  if(!rows.length){
+    wrap.innerHTML = '<div style="color:#8B949E;padding:24px;text-align:center">No gaps found with current settings</div>';
+    return;
+  }
+  wrap.innerHTML = `<div style="overflow-x:auto"><table>
+    <thead><tr>
+      <th>#</th><th>Symbol</th><th>Direction</th>
+      <th>Prev Close</th><th>LTP</th><th>Gap %</th>
+      <th>Actions</th>
+    </tr></thead>
+    <tbody>${rows.map((r,i)=>`<tr>
+      <td style="color:#8B949E">${i+1}</td>
+      <td><span class="sym-link" onclick="goChart('${r.symbol}')">${r.symbol}</span></td>
+      <td><span class="${r.direction==='UP'?'badge-up':'badge-down'}">${r.direction==='UP'?'▲ GAP UP':'▼ GAP DOWN'}</span></td>
+      <td style="color:#8B949E">₹${r.prev_close}</td>
+      <td style="font-weight:700">₹${r.ltp}</td>
+      <td style="font-weight:800" class="${r.gap_pct>=0?'up':'down'}">${r.gap_pct>0?'+':''}${r.gap_pct}%</td>
+      <td>
+        <button onclick="goChart('${r.symbol}')" style="background:#1F6FEB;border:none;border-radius:4px;padding:3px 10px;color:#fff;cursor:pointer;font-size:11px">Chart</button>
+        <button onclick="setAlertFromGap('${r.symbol}',${r.ltp},${r.gap_pct})" style="background:#21262D;border:1px solid #30363D;border-radius:4px;padding:3px 10px;color:#8B949E;cursor:pointer;font-size:11px;margin-left:4px">Alert</button>
+      </td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+function filterDir(dir){
+  const rows = dir === 'ALL' ? _allResults : _allResults.filter(r=>r.direction===dir);
+  renderTable(rows);
+}
+
+function goChart(sym){ window.open(`/chart.html?symbol=${sym}`, '_blank'); }
+
+async function setAlertFromGap(sym, ltp, gapPct){
+  const type  = gapPct > 0 ? 'price_below' : 'price_above';
+  const val   = gapPct > 0 ? +(ltp * 0.99).toFixed(2) : +(ltp * 1.01).toFixed(2);
+  const note  = gapPct > 0 ? `Gap Up reversal — was ${gapPct}%` : `Gap Down bounce — was ${gapPct}%`;
+  try{
+    await fetch(`${API}/api/alerts`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({symbol:sym, type, value:val, note})
+    });
+    // Quick toast
+    const el = document.createElement('div');
+    el.style.cssText='position:fixed;bottom:20px;right:20px;background:#238636;color:#fff;padding:8px 16px;border-radius:6px;font-size:13px;z-index:9999';
+    el.textContent=`✓ Alert set for ${sym}`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 3000);
+  }catch(e){}
+}
+
+function exportCSV(){
+  if(!_allResults.length) return;
+  const cols = ['symbol','direction','prev_close','ltp','gap_pct','abs_gap'];
+  const csv  = [cols.join(','), ..._allResults.map(r=>cols.map(c=>r[c]??'').join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download = `gap_scan_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+function scheduleAuto(){
+  document.getElementById('autoInfo').style.display='block';
+  const now  = new Date();
+  const ist  = new Date(now.getTime() + 5.5*3600*1000);
+  const h = ist.getUTCHours(), m = ist.getUTCMinutes();
+  const minsTo915 = ((9-h)*60 + (15-m));
+  const delay = minsTo915 > 0 ? minsTo915*60*1000 : 0;
+  document.getElementById('scanStatus').textContent = delay > 60000
+    ? `⏰ Scheduled — will scan at 09:15 IST (in ${Math.round(delay/60000)} min)`
+    : '⏰ Scanning at 09:15 IST...';
+  _autoTimer = setTimeout(()=>{
+    runScanner();
+    _autoInterval = setInterval(runScanner, 5*60*1000); // refresh every 5 min till 09:45
+    setTimeout(cancelAuto, 30*60*1000); // stop after 30 min
+  }, delay);
+}
+
+function cancelAuto(){
+  if(_autoTimer)    clearTimeout(_autoTimer);
+  if(_autoInterval) clearInterval(_autoInterval);
+  _autoTimer = _autoInterval = null;
+  document.getElementById('autoInfo').style.display='none';
+  document.getElementById('scanStatus').textContent='Auto scan cancelled';
+}
+</script>
+</body>
+</html>

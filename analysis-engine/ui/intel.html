@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Intelligence — StockIQ</title>
+<link rel="stylesheet" href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 20px;display:flex;align-items:center;gap:20px;height:52px;flex-wrap:wrap}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:12px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent;white-space:nowrap}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.page{max-width:1600px;margin:0 auto;padding:16px 20px}
+.grid{display:grid;gap:12px}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-3{grid-template-columns:1fr 1fr 1fr}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.card{background:#161B22;border:1px solid #30363D;border-radius:8px;padding:14px}
+.card-title{font-size:11px;color:#8B949E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.up{color:#3FB950}.down{color:#F85149}.neutral{color:#E3B341}
+.badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+.badge-bull{background:#1A3A2A;color:#3FB950}
+.badge-bear{background:#3A1A1A;color:#F85149}
+.badge-neut{background:#2A2A1A;color:#E3B341}
+.badge-buy {background:#1A3A2A;color:#3FB950}
+.badge-sell{background:#3A1A1A;color:#F85149}
+.badge-hold{background:#2A2A1A;color:#E3B341}
+.badge-on  {background:#1A3A2A;color:#3FB950}
+.badge-off {background:#3A1A1A;color:#F85149}
+.badge-neut2{background:#2A2A1A;color:#E3B341}
+.btn{border:none;border-radius:6px;padding:6px 14px;color:#fff;cursor:pointer;font-size:12px;font-weight:600}
+.btn-primary{background:#1F6FEB}.btn-primary:hover{background:#388BFD}
+.btn-ghost{background:#21262D;border:1px solid #30363D;color:#8B949E}.btn-ghost:hover{background:#30363D;color:#E6EDF3}
+.loading-overlay{position:fixed;inset:0;background:rgba(13,17,23,0.92);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;z-index:9999;gap:16px}
+.spinner{width:40px;height:40px;border:3px solid #30363D;border-top-color:#58A6FF;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress-bar-wrap{width:280px;height:6px;background:#21262D;border-radius:3px;overflow:hidden}
+.progress-bar{height:6px;background:#58A6FF;border-radius:3px;transition:width .3s}
+.section-label{font-size:11px;color:#8B949E;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#21262D;padding:6px 10px;text-align:left;color:#8B949E;font-weight:600;border-bottom:1px solid #30363D}
+td{padding:6px 10px;border-bottom:1px solid #21262D}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#1C2128}
+.sym-link{color:#58A6FF;cursor:pointer;font-weight:600}.sym-link:hover{text-decoration:underline}
+.sector-bar-wrap{background:#21262D;border-radius:3px;height:5px;overflow:hidden;margin-top:3px}
+.sector-bar{height:5px;border-radius:3px;transition:width .5s}
+.score-ring{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;
+  border-radius:50%;border:3px solid;font-size:15px;font-weight:800;flex-shrink:0}
+.kv{background:#0D1117;border-radius:6px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
+.kv .lbl{font-size:11px;color:#8B949E}
+.kv .val{font-size:13px;font-weight:700}
+.reason-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#58A6FF;margin-right:5px;vertical-align:middle}
+#lastRefresh{font-size:10px;color:#484F58}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="logo"><img src="img/logo.png"/> StockIQ</span>
+  <a href="/">Hub<!-- Dashboard --></a>
+  <a href="/screener.html">Scan<!-- Screener --></a>
+  <a href="/tips.html"><!-- 💡 -->Tips<!-- Tips --></a>
+  <a href="/chart.html">Chart<!-- Charts --></a>
+  <a href="/options.html">Opts<!-- Options --></a>
+  <a href="/heatmap.html">Map<!-- Heatmap --></a>
+  <a href="/alerts.html"><!-- 🔔 --> Alert<!-- Alters --></a>
+  <a href="/intel.html" class="active"><!-- 🧠 --> Algo<!-- Logic --></a>
+  <a href="/gap-scanner.html"><!-- 📈 --> Gap<!-- Gaps --></a>
+  <a href="/backtester.html"><!-- 🧪 --> Test<!-- Backtest --></a>
+  <a href="/briefing.html"><!-- 📋 --> Brief<!-- Briefing --></a>
+  <a href="/corp-actions.html">Corp</a>
+  <a href="/notes.html">Log<!-- Notes --></a>
+  <a href="/settings.html" style="margin-left:auto">⚙ Settings</a>
+</nav>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div style="color:#58A6FF;font-weight:600;font-size:15px">Analysing Market...</div>
+  <div style="color:#8B949E;font-size:12px" id="loadingMsg">Fetching Nifty50 data — this takes ~10 seconds on first load</div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+  <div style="font-size:11px;color:#484F58">Results cached for 20 minutes after first load</div>
+</div>
+
+<div class="page" id="mainPage" style="display:none">
+
+  <!-- Header bar -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div>
+      <span style="font-size:20px;font-weight:800">🧠 Market Intelligence</span>
+      <span style="font-size:12px;color:#8B949E;margin-left:10px" id="lastRefresh"></span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span id="overallBadge" style="font-size:14px;font-weight:800;padding:5px 14px;border-radius:8px"></span>
+      <button class="btn btn-ghost" onclick="refresh(true)">↻ Refresh Now</button>
+      <button class="btn btn-primary" onclick="window.location.href='/screener.html'">→ Open Screener</button>
+    </div>
+  </div>
+
+  <!-- Row 1: Overall + Regime + BankNifty + Breadth -->
+  <div class="grid grid-4" style="margin-bottom:12px" id="row1"></div>
+
+  <!-- Row 2: Sector Rotation -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">Sector Rotation — 1 Month Performance <span style="font-size:10px">Rank by return %</span></div>
+    <div id="sectorTable"></div>
+  </div>
+
+  <!-- Row 3: Leaders + Laggards -->
+  <div class="grid grid-2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="card-title">🚀 Momentum Leaders <span class="badge badge-bull">Top 5</span></div>
+      <div id="leadersTable"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔻 Momentum Laggards <span class="badge badge-bear">Bottom 5</span></div>
+      <div id="laggardsTable"></div>
+    </div>
+  </div>
+
+  <!-- Row 4: Reversal Watchlist + Breakout Candidates -->
+  <div class="grid grid-2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="card-title">🔄 Reversal Watchlist <span style="font-size:10px;color:#8B949E">Oversold + near support</span></div>
+      <div id="reversalTable"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">💥 Breakout Candidates <span style="font-size:10px;color:#8B949E">BB squeeze + coiling</span></div>
+      <div id="breakoutTable"></div>
+    </div>
+  </div>
+
+  <!-- Row 5: Macro -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">🌍 Macro Snapshot</div>
+    <div id="macroRow" class="grid grid-4"></div>
+    <div id="macroNote" style="margin-top:10px;font-size:12px;color:#8B949E;padding:8px;background:#0D1117;border-radius:6px"></div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div style="font-size:11px;color:#484F58;text-align:center;padding:10px 0">
+    Market Intelligence is based on technical analysis of historical price data only.
+    Not financial advice. Always conduct your own research.
+  </div>
+</div>
+
+<script>
+const API = "";
+let _data = null;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function pctColor(v){ return v > 0 ? "up" : v < 0 ? "down" : "neutral" }
+function pctStr(v){ return (v > 0 ? "+" : "") + v + "%" }
+function goChart(sym){ window.open(`/chart.html?symbol=${sym}`, "_blank") }
+
+function fmtINR(v) {
+  if (!v) return "₹0";
+  if (v >= 1e7) return "₹" + (v/1e7).toFixed(2) + "Cr";
+  if (v >= 1e5) return "₹" + (v/1e5).toFixed(2) + "L";
+  return "₹" + v.toFixed(2);
+}
+
+// ── Fake progress animation while loading ─────────────────────────────────────
+let _progInterval = null;
+function startProgress() {
+  let pct = 0;
+  _progInterval = setInterval(() => {
+    pct = Math.min(pct + (90 - pct) * 0.06, 92);
+    document.getElementById("progressBar").style.width = pct + "%";
+    const msgs = [
+      "Fetching Nifty50 OHLCV data...",
+      "Computing indicators for 50 stocks...",
+      "Analysing sector rotation...",
+      "Scanning for reversal setups...",
+      "Detecting breakout squeezes...",
+      "Building macro snapshot...",
+      "Almost done...",
+    ];
+    const i = Math.floor(pct / 14);
+    document.getElementById("loadingMsg").textContent = msgs[Math.min(i, msgs.length - 1)];
+  }, 400);
+}
+function stopProgress() {
+  clearInterval(_progInterval);
+  document.getElementById("progressBar").style.width = "100%";
+  setTimeout(() => {
+    document.getElementById("loadingOverlay").style.display = "none";
+    document.getElementById("mainPage").style.display = "block";
+  }, 300);
+}
+
+// ── Load data ─────────────────────────────────────────────────────────────────
+async function refresh(force = false) {
+  document.getElementById("loadingOverlay").style.display = "flex";
+  document.getElementById("mainPage").style.display = "none";
+  startProgress();
+  try {
+    const r = await fetch(`${API}/api/market-intelligence${force ? "?force=1" : ""}`);
+    if (!r.ok) { throw new Error(`HTTP ${r.status}`); }
+    _data = await r.json();
+    if (_data.error) throw new Error(_data.error);
+    render(_data);
+    stopProgress();
+  } catch(e) {
+    stopProgress();
+    document.getElementById("mainPage").style.display = "block";
+    document.getElementById("row1").innerHTML = `<div style="color:#F85149;padding:20px;grid-column:1/-1">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render(d) {
+  renderHeader(d);
+  renderRow1(d);
+  renderSectors(d.sectors);
+  renderMovers(d.movers);
+  renderReversals(d.reversals);
+  renderBreakouts(d.breakouts);
+  renderMacro(d.macro);
+}
+
+function renderHeader(d) {
+  const ov  = d.overall;
+  const meta = d.meta;
+  const colors = {green:"#3FB950", red:"#F85149", yellow:"#E3B341"};
+  const bgs    = {green:"rgba(63,185,80,0.12)", red:"rgba(248,81,73,0.12)", yellow:"rgba(227,179,65,0.12)"};
+  const el = document.getElementById("overallBadge");
+  el.textContent = ov.action;
+  el.style.background = bgs[ov.color] || bgs.yellow;
+  el.style.color = colors[ov.color] || colors.yellow;
+  el.style.border = `1px solid ${colors[ov.color] || colors.yellow}44`;
+
+  document.getElementById("lastRefresh").textContent =
+    `Generated ${meta.generated_at} IST  |  ${meta.elapsed_sec}s  |  ${meta.symbols_used} symbols  |  Cache ${meta.cache_ttl_min}min`;
+}
+
+function renderRow1(d) {
+  const ov = d.overall;
+  const reg = d.regime;
+  const bn  = d.banknifty;
+  const br  = d.breadth;
+
+  const ovColor  = {green:"#3FB950", red:"#F85149", yellow:"#E3B341"}[ov.color] || "#E3B341";
+  const regColor = reg.regime === "Bull Market" ? "#3FB950" : reg.regime === "Bear Market" ? "#F85149" : "#E3B341";
+  const bnColor  = bn.regime  === "Bull Market" ? "#3FB950" : bn.regime  === "Bear Market" ? "#F85149" : "#E3B341";
+  const brColor  = br.above_ema50_pct >= 60 ? "#3FB950" : br.above_ema50_pct <= 35 ? "#F85149" : "#E3B341";
+
+  document.getElementById("row1").innerHTML = `
+    <!-- Overall -->
+    <div class="card">
+      <div class="card-title">Overall Signal</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+        <div class="score-ring" style="border-color:${ovColor};color:${ovColor}">${ov.score}</div>
+        <div>
+          <div style="font-size:18px;font-weight:800;color:${ovColor}">${ov.action}</div>
+          <div style="font-size:11px;color:#8B949E;margin-top:3px">Composite Market Score</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#8B949E;line-height:1.5">${ov.note}</div>
+    </div>
+
+    <!-- Nifty Regime -->
+    <div class="card">
+      <div class="card-title">Nifty50 Regime</div>
+      <div style="font-size:16px;font-weight:700;color:${regColor};margin-bottom:6px">${reg.regime}</div>
+      <div class="kv" style="margin-bottom:6px">
+        <span class="lbl">Nifty50</span>
+        <span class="val">₹${reg.price?.toLocaleString() || '—'}</span>
+      </div>
+      <div class="kv" style="margin-bottom:6px">
+        <span class="lbl">RSI(14)</span>
+        <span class="val" style="color:${reg.rsi && reg.rsi < 40 ? '#3FB950' : reg.rsi && reg.rsi > 60 ? '#F85149' : '#E3B341'}">${reg.rsi ?? '—'}</span>
+      </div>
+      <div style="font-size:11px;color:#8B949E;margin-top:6px;line-height:1.5">${reg.detail}</div>
+    </div>
+
+    <!-- BankNifty -->
+    <div class="card">
+      <div class="card-title">BankNifty Health</div>
+      <div style="font-size:16px;font-weight:700;color:${bnColor};margin-bottom:6px">${bn.regime}</div>
+      <div class="kv" style="margin-bottom:6px">
+        <span class="lbl">BankNifty</span>
+        <span class="val">₹${bn.price?.toLocaleString() || '—'}</span>
+      </div>
+      <div class="kv" style="margin-bottom:6px">
+        <span class="lbl">RSI(14)</span>
+        <span class="val" style="color:${bn.rsi && bn.rsi < 40 ? '#3FB950' : bn.rsi && bn.rsi > 60 ? '#F85149' : '#E3B341'}">${bn.rsi ?? '—'}</span>
+      </div>
+      <div style="font-size:11px;color:#8B949E;margin-top:6px;line-height:1.5">${bn.detail}</div>
+    </div>
+
+    <!-- Breadth -->
+    <div class="card">
+      <div class="card-title">Market Breadth</div>
+      <div class="kv" style="margin-bottom:6px">
+        <span class="lbl">Above EMA50</span>
+        <span class="val" style="color:${brColor}">${br.above_ema50_pct}% <span style="font-size:10px;color:#8B949E">(${br.above_ema50}/${br.total})</span></span>
+      </div>
+      <div style="background:#21262D;border-radius:3px;height:6px;margin-bottom:10px;overflow:hidden">
+        <div style="background:${brColor};height:6px;width:${br.above_ema50_pct}%;transition:width .5s;border-radius:3px"></div>
+      </div>
+      <div class="kv" style="margin-bottom:6px">
+        <span class="lbl">Above EMA200</span>
+        <span class="val">${br.above_ema200_pct}% <span style="font-size:10px;color:#8B949E">(${br.above_ema200}/${br.total})</span></span>
+      </div>
+      <div style="font-size:11px;color:#8B949E;margin-top:6px">${br.signal}</div>
+    </div>`;
+}
+
+function renderSectors(sectors) {
+  if (!sectors || !sectors.length) {
+    document.getElementById("sectorTable").innerHTML = '<div style="color:#8B949E;padding:12px">No sector data</div>';
+    return;
+  }
+  const maxAbs = Math.max(...sectors.map(s => Math.abs(s.return_1m)), 1);
+  document.getElementById("sectorTable").innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
+      ${sectors.map((s, i) => {
+        const color  = s.return_1m >= 0 ? "#3FB950" : "#F85149";
+        const barW   = Math.abs(s.return_1m) / maxAbs * 100;
+        const rank   = i + 1;
+        const rankColor = rank <= 3 ? "#3FB950" : rank >= sectors.length - 1 ? "#F85149" : "#8B949E";
+        return `<div style="background:#0D1117;border-radius:6px;padding:10px;border:1px solid #21262D">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700;font-size:13px">${s.sector}</span>
+            <span style="font-size:11px;font-weight:700;color:${rankColor}">#${rank}</span>
+          </div>
+          <div style="font-size:18px;font-weight:800;color:${color};margin:4px 0">${pctStr(s.return_1m)}</div>
+          <div class="sector-bar-wrap"><div class="sector-bar" style="background:${color};width:${barW}%"></div></div>
+          <div style="margin-top:6px;font-size:10px;color:#8B949E">
+            Leader: <span class="sym-link" onclick="goChart('${s.leader}')" style="font-size:10px">${s.leader}</span>
+            <span class="up"> ${pctStr(s.leader_ret)}</span>
+          </div>
+          <div style="font-size:10px;color:#8B949E">
+            Laggard: <span class="sym-link" onclick="goChart('${s.laggard}')" style="font-size:10px">${s.laggard}</span>
+            <span class="down"> ${pctStr(s.laggard_ret)}</span>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>`;
+}
+
+function moversTableHTML(rows, isLeader) {
+  if (!rows || !rows.length) return '<div style="color:#8B949E;padding:12px">No data</div>';
+  return `<table>
+    <thead><tr>
+      <th>#</th><th>Symbol</th><th>Price</th><th>1W</th><th>1M</th><th>RSI</th><th>Momentum</th>
+    </tr></thead>
+    <tbody>${rows.map((r, i) => `<tr>
+      <td style="color:#8B949E">${i+1}</td>
+      <td><span class="sym-link" onclick="goChart('${r.symbol}')">${r.symbol}</span></td>
+      <td>₹${r.price}</td>
+      <td class="${pctColor(r.ret_1w)}">${pctStr(r.ret_1w)}</td>
+      <td class="${pctColor(r.ret_1m)}">${pctStr(r.ret_1m)}</td>
+      <td style="color:${r.rsi && r.rsi < 35 ? '#3FB950' : r.rsi && r.rsi > 65 ? '#F85149' : '#8B949E'}">${r.rsi ?? '—'}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="background:#21262D;border-radius:3px;height:5px;width:60px;overflow:hidden">
+            <div style="background:${isLeader?'#3FB950':'#F85149'};height:5px;width:${r.momentum}%;border-radius:3px"></div>
+          </div>
+          <span style="font-size:11px;color:#8B949E">${r.momentum}</span>
+        </div>
+      </td>
+    </tr>`).join("")}
+    </tbody></table>`;
+}
+
+function renderMovers(movers) {
+  document.getElementById("leadersTable").innerHTML  = moversTableHTML(movers?.leaders,  true);
+  document.getElementById("laggardsTable").innerHTML = moversTableHTML(movers?.laggards, false);
+}
+
+function renderReversals(reversals) {
+  if (!reversals || !reversals.length) {
+    document.getElementById("reversalTable").innerHTML =
+      '<div style="color:#8B949E;padding:12px">No reversal candidates right now — market not oversold enough</div>';
+    return;
+  }
+  document.getElementById("reversalTable").innerHTML = `<table>
+    <thead><tr><th>Symbol</th><th>Price</th><th>RSI</th><th>BB Lower</th><th>SL</th><th>Target</th><th>Setup</th></tr></thead>
+    <tbody>${reversals.map(r => `<tr>
+      <td><span class="sym-link" onclick="goChart('${r.symbol}')">${r.symbol}</span></td>
+      <td>₹${r.price}</td>
+      <td style="color:#3FB950">${r.rsi}</td>
+      <td style="color:#8B949E">₹${r.bb_lower}</td>
+      <td style="color:#F85149">₹${r.stop_loss}</td>
+      <td style="color:#3FB950">₹${r.target}</td>
+      <td style="font-size:11px;color:#8B949E;max-width:160px">
+        ${r.reasons.map(rx => `<span><span class="reason-dot"></span>${rx}</span>`).join("<br>")}
+      </td>
+    </tr>`).join("")}
+    </tbody></table>`;
+}
+
+function renderBreakouts(breakouts) {
+  if (!breakouts || !breakouts.length) {
+    document.getElementById("breakoutTable").innerHTML =
+      '<div style="color:#8B949E;padding:12px">No breakout candidates right now</div>';
+    return;
+  }
+  document.getElementById("breakoutTable").innerHTML = `<table>
+    <thead><tr><th>Symbol</th><th>Price</th><th>BB Width</th><th>Direction</th><th>Trigger</th><th>Target</th><th>Notes</th></tr></thead>
+    <tbody>${breakouts.map(b => {
+      const dc = b.direction === "Up" ? "#3FB950" : "#F85149";
+      const trigger = b.direction === "Up" ? b.breakout_up : b.breakdown;
+      return `<tr>
+        <td><span class="sym-link" onclick="goChart('${b.symbol}')">${b.symbol}</span></td>
+        <td>₹${b.price}</td>
+        <td style="color:#E3B341">${b.bb_width}%</td>
+        <td style="color:${dc};font-weight:700">${b.direction}</td>
+        <td style="color:${dc}">₹${trigger}</td>
+        <td style="color:#58A6FF">₹${b.target}</td>
+        <td style="font-size:11px;color:#8B949E;max-width:150px">
+          ${b.reasons.map(rx => `<span><span class="reason-dot" style="background:#E3B341"></span>${rx}</span>`).join("<br>")}
+        </td>
+      </tr>`;
+    }).join("")}
+    </tbody></table>`;
+}
+
+function renderMacro(macro) {
+  if (!macro) return;
+  const syms = ["GOLD", "SILVER", "CRUDEOIL"];
+  const icons = {GOLD: "🟡", SILVER: "⬜", CRUDEOIL: "🛢"};
+  document.getElementById("macroRow").innerHTML = syms.map(sym => {
+    const m = macro[sym];
+    if (!m || !m.price) return `<div class="card"><div class="card-title">${icons[sym]||''} ${sym}</div><div style="color:#8B949E">No data</div></div>`;
+    const c = pctColor(m.ret_1m);
+    return `<div class="card">
+      <div class="card-title">${icons[sym]||''} ${sym} <span style="font-size:10px;color:#8B949E">${m.unit}</span></div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:4px">₹${m.price.toLocaleString()}</div>
+      <div class="${c}" style="font-size:13px;margin-bottom:6px">${pctStr(m.ret_1m)} 1M</div>
+      <div style="font-size:11px;color:#8B949E">${m.signal}</div>
+      ${m.rsi ? `<div style="font-size:10px;color:#484F58;margin-top:4px">RSI ${m.rsi}</div>` : ""}
+    </div>`;
+  }).join("") + `<div class="card">
+    <div class="card-title">💱 USD/INR</div>
+    <div style="font-size:20px;font-weight:800;margin-bottom:4px">₹${macro.usd_inr}</div>
+    <div style="font-size:11px;color:#8B949E;margin-top:8px">${macro.correlation_note}</div>
+  </div>`;
+
+  document.getElementById("macroNote").textContent = "📌 " + macro.correlation_note;
+}
+
+// ── Auto-refresh every 20 min ─────────────────────────────────────────────────
+refresh(false);
+setInterval(() => refresh(false), 20 * 60 * 1000);
+</script>
+</body>
+</html>

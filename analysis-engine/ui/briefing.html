@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Briefing — StockIQ</title>
+<link rel="stylesheet" href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#30363D;border-radius:4px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 16px;display:flex;align-items:center;gap:16px;height:52px;flex-wrap:wrap}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:8px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent;text-decoration:none;white-space:nowrap}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.page{max-width:1400px;margin:0 auto;padding:16px}
+
+/* ── Toolbar ── */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;
+  background:#161B22;border:1px solid #30363D;border-radius:8px;padding:10px 14px}
+.tag-group{display:flex;gap:4px;flex-wrap:wrap}
+.tag{background:#21262D;border:1px solid #30363D;border-radius:4px;padding:3px 10px;
+  color:#8B949E;cursor:pointer;font-size:11px;white-space:nowrap}
+.tag.active{border-color:#58A6FF;color:#58A6FF;background:#1C2128}
+.sym-input{background:#0D1117;border:1px solid #30363D;border-radius:6px;padding:6px 10px;
+  color:#E6EDF3;font-size:13px;outline:none;width:160px}
+.sym-input:focus{border-color:#58A6FF}
+.btn{border:none;border-radius:6px;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:600}
+.btn-blue{background:#1F6FEB;color:#fff}.btn-blue:hover{background:#388BFD}
+.btn-ghost{background:#21262D;border:1px solid #30363D;color:#E6EDF3}.btn-ghost:hover{background:#30363D}
+
+/* ── Grid ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:12px}
+.card{background:#161B22;border:1px solid #30363D;border-radius:8px;overflow:hidden}
+.card-head{padding:12px 14px 8px;border-bottom:1px solid #21262D;display:flex;justify-content:space-between;align-items:flex-start}
+.card-sym{font-size:16px;font-weight:700;color:#E6EDF3}
+.card-price{font-size:15px;font-weight:700}
+.card-chg{font-size:12px;margin-top:2px}
+.up{color:#3FB950}.down{color:#F85149}.neutral{color:#8B949E}
+.card-body{padding:12px 14px}
+
+/* ── Briefing text ── */
+.briefing-text{font-size:12px;line-height:1.8;white-space:pre-wrap;
+  background:#0D1117;border-radius:6px;padding:10px 12px;
+  border-left:3px solid #30363D;color:#C9D1D9;font-family:'Cascadia Code','Courier New',monospace}
+
+/* ── Ranges ── */
+.range-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.range-box{background:#0D1117;border:1px solid #21262D;border-radius:5px;padding:6px 10px;flex:1;min-width:120px}
+.range-lbl{font-size:10px;color:#8B949E;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.range-val{font-size:13px;font-weight:700}
+
+/* ── Signal badge ── */
+.sig{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700}
+.sig-buy {background:#1A3A2A;color:#3FB950}
+.sig-sell{background:#3A1A1A;color:#F85149}
+.sig-hold{background:#21262D;color:#8B949E}
+.bias-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;margin-left:6px}
+
+/* ── Levels bar ── */
+.levels{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.lv{background:#0D1117;border:1px solid #21262D;border-radius:4px;padding:3px 8px;font-size:11px}
+.lv span{color:#8B949E;margin-right:4px}
+
+/* ── Setup box ── */
+.setup-box{background:#0D1520;border:1px solid #1C2F4A;border-radius:6px;padding:8px 12px;
+  font-size:12px;color:#E6EDF3;margin-top:8px;line-height:1.8}
+.setup-box .setup-line{color:#58A6FF;font-weight:600}
+.setup-box .break-line{color:#E3B341}
+
+/* ── Copy button ── */
+.copy-btn{background:none;border:1px solid #30363D;border-radius:4px;padding:2px 8px;
+  color:#8B949E;cursor:pointer;font-size:10px;float:right;margin-top:-2px}
+.copy-btn:hover{color:#58A6FF;border-color:#58A6FF}
+
+/* ── Loading / empty ── */
+.loading-card{background:#161B22;border:1px solid #30363D;border-radius:8px;
+  padding:40px;text-align:center;color:#8B949E;grid-column:1/-1}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #30363D;
+  border-top-color:#58A6FF;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── ST signal highlight ── */
+.st-flip{background:#1A2A1A;border:1px solid #2A4A2A;border-radius:4px;
+  padding:4px 10px;font-size:11px;color:#3FB950;margin-top:6px;display:inline-block}
+.st-flip.bear{background:#2A1A1A;border-color:#4A2A2A;color:#F85149}
+
+/* Symbol chips */
+.sym-chip{display:inline-flex;align-items:center;gap:4px;background:#21262D;
+  border:1px solid #30363D;border-radius:12px;padding:2px 8px 2px 10px;
+  font-size:11px;color:#8B949E;cursor:pointer;margin:2px}
+.sym-chip:hover{border-color:#58A6FF;color:#E6EDF3}
+.sym-chip .rm{color:#484F58;font-size:12px;padding-left:2px}
+.sym-chip .rm:hover{color:#F85149}
+</style>
+</head>
+<body>
+<nav>
+  <span class="logo"><img src="img/logo.png"/> StockIQ</span>
+  <a href="/">Hub<!-- Dashboard --></a>
+  <a href="/screener.html">Scan<!-- Screener --></a>
+  <a href="/tips.html"><!-- 💡 -->Tips<!-- Tips --></a>
+  <a href="/chart.html">Chart<!-- Charts --></a>
+  <a href="/options.html">Opts<!-- Options --></a>
+  <a href="/heatmap.html">Map<!-- Heatmap --></a>
+  <a href="/alerts.html"><!-- 🔔 --> Alert<!-- Alters --></a>
+  <a href="/intel.html"><!-- 🧠 --> Algo<!-- Logic --></a>
+  <a href="/gap-scanner.html"><!-- 📈 --> Gap<!-- Gaps --></a>
+  <a href="/backtester.html"><!-- 🧪 --> Test<!-- Backtest --></a>
+  <a href="/briefing.html" class="active"><!-- 📋 --> Brief<!-- Briefing --></a>
+  <a href="/corp-actions.html">Corp</a>
+  <a href="/notes.html">Log<!-- Notes --></a>
+  <a href="/premium.html" style="color:#E3B341">⭐ Premium</a>
+  <a href="/settings.html" style="margin-left:auto">⚙ Settings</a>
+</nav>
+
+<div class="page">
+
+  <div class="toolbar">
+    <!-- Preset groups -->
+    <div style="font-size:11px;color:#8B949E;white-space:nowrap">Quick:</div>
+    <div class="tag-group" id="presetTags">
+      <div class="tag active" onclick="loadPreset('indices',this)">Indices</div>
+      <div class="tag" onclick="loadPreset('commodities',this)">Commodities</div>
+      <div class="tag" onclick="loadPreset('nifty50',this)">Nifty 50</div>
+      <div class="tag" onclick="loadPreset('custom',this)">Custom</div>
+    </div>
+    <div style="height:24px;width:1px;background:#30363D;margin:0 4px"></div>
+    <!-- Custom symbol add -->
+    <input class="sym-input" id="addSymInput" placeholder="Add symbol..." 
+      oninput="this.value=this.value.toUpperCase()"
+      onkeydown="if(event.key==='Enter') addCustomSym()">
+    <button class="btn btn-ghost" onclick="addCustomSym()" style="padding:6px 12px;font-size:12px">+ Add</button>
+    <button class="btn btn-blue" onclick="runBriefing()" id="runBtn">⟳ Generate Briefing</button>
+    <span id="lastUpdate" style="font-size:11px;color:#484F58;margin-left:auto"></span>
+  </div>
+
+  <!-- Custom symbols chips -->
+  <div id="customChips" style="margin-bottom:12px;display:none">
+    <span style="font-size:11px;color:#8B949E;margin-right:6px">Custom:</span>
+  </div>
+
+  <!-- Briefing cards grid -->
+  <div class="grid" id="briefingGrid">
+    <div class="loading-card">Select a preset and click Generate Briefing</div>
+  </div>
+
+</div>
+
+<script>
+const API = "";
+
+const PRESETS = {
+  indices:     ["NIFTY50","BANKNIFTY","FINNIFTY","SENSEX"],
+  commodities: ["GOLD","SILVER","CRUDEOIL","NATURALGAS","COPPER"],
+  nifty50:     ["RELIANCE","TCS","HDFCBANK","INFY","ICICIBANK","HINDUNILVR","ITC",
+                 "SBIN","BHARTIARTL","KOTAKBANK","LT","AXISBANK","ASIANPAINT",
+                 "MARUTI","TITAN","SUNPHARMA","BAJFINANCE","HCLTECH","WIPRO","TMCV"],
+  custom: []
+};
+
+let activePreset = 'indices';
+let customSyms   = JSON.parse(localStorage.getItem('briefing_custom') || '[]');
+
+function loadPreset(name, el){
+  activePreset = name;
+  document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  else {
+    // find by preset name
+    document.querySelectorAll('.tag').forEach(t => {
+      if(t.getAttribute('onclick') && t.getAttribute('onclick').includes(`'${name}'`))
+        t.classList.add('active');
+    });
+  }
+  const chips = document.getElementById('customChips');
+  if(name === 'custom'){
+    chips.style.display = 'block';
+    renderChips();
+  } else {
+    chips.style.display = 'none';
+  }
+}
+
+function renderChips(){
+  const el = document.getElementById('customChips');
+  el.innerHTML = '<span style="font-size:11px;color:#8B949E;margin-right:6px">Custom:</span>';
+  if(!customSyms.length){
+    el.innerHTML += '<span style="font-size:11px;color:#484F58">No symbols — add above</span>';
+    return;
+  }
+  customSyms.forEach(s => {
+    el.innerHTML += `<span class="sym-chip">${s}<span class="rm" onclick="removeSym('${s}')">✕</span></span>`;
+  });
+}
+
+function addCustomSym(){
+  const inp = document.getElementById('addSymInput');
+  const sym = inp.value.trim().toUpperCase();
+  if(!sym) return;
+  if(!customSyms.includes(sym)) customSyms.push(sym);
+  localStorage.setItem('briefing_custom', JSON.stringify(customSyms));
+  inp.value = '';
+  activePreset = 'custom';
+  loadPreset('custom', document.querySelector('[onclick*="\'custom\'"]'));
+}
+
+function removeSym(s){
+  customSyms = customSyms.filter(x => x !== s);
+  localStorage.setItem('briefing_custom', JSON.stringify(customSyms));
+  renderChips();
+}
+
+async function runBriefing(){
+  const symbols = activePreset === 'custom' ? customSyms : PRESETS[activePreset];
+  if(!symbols || !symbols.length){
+    document.getElementById('briefingGrid').innerHTML =
+      '<div class="loading-card">No symbols selected</div>';
+    return;
+  }
+
+  const btn = document.getElementById('runBtn');
+  btn.textContent = '⏳ Loading...';
+  btn.disabled = true;
+
+  document.getElementById('briefingGrid').innerHTML =
+    `<div class="loading-card"><span class="spinner"></span>Generating briefing for ${symbols.length} symbol${symbols.length>1?'s':''}...</div>`;
+
+  try{
+    // Fetch briefings and live prices in parallel
+    const [briefResp, ltpResp] = await Promise.all([
+      fetch(`${API}/api/briefing/batch`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({symbols})
+      }),
+      fetch(`${API}/api/ltp`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({symbols})
+      }).catch(()=>null)
+    ]);
+
+    const d    = await briefResp.json();
+    const ltp  = ltpResp ? await ltpResp.json().catch(()=>({})) : {};
+
+    // Merge live prices into results
+    const results = (d.results || []).map(r => {
+      const live = ltp[r.symbol];
+      if(live && live.price && live.price > 0){
+        r.price      = live.price;
+        r.day_change = live.change_pct ?? r.day_change;
+        r._live      = true;
+      }
+      return r;
+    });
+
+    renderCards(results);
+    document.getElementById('lastUpdate').textContent =
+      'Updated ' + new Date().toLocaleTimeString();
+  } catch(e){
+    document.getElementById('briefingGrid').innerHTML =
+      `<div class="loading-card" style="color:#F85149">Error: ${e.message}</div>`;
+  }
+
+  btn.textContent = '⟳ Generate Briefing';
+  btn.disabled = false;
+}
+
+function renderCards(results){
+  const grid = document.getElementById('briefingGrid');
+  if(!results.length){ grid.innerHTML='<div class="loading-card">No results</div>'; return; }
+
+  grid.innerHTML = results.map(r => {
+    if(r.error) return `
+      <div class="card">
+        <div class="card-head">
+          <div class="card-sym">${r.symbol}</div>
+        </div>
+        <div class="card-body" style="color:#F85149;font-size:12px">⚠ ${r.error}</div>
+      </div>`;
+
+    const chgCls  = r.day_change >= 0 ? 'up' : 'down';
+    const chgSign = r.day_change >= 0 ? '+' : '';
+    const sigCls  = r.action==='BUY'?'sig-buy':r.action==='SELL'?'sig-sell':'sig-hold';
+    const biasColor = r.bias?.includes('Bullish')?'#3FB950':r.bias?.includes('Bearish')?'#F85149':'#E3B341';
+
+    const ir = r.intraday_range || {};
+    const wr = r.weekly_range   || {};
+    const lv = r.levels         || {};
+    const st = r.setup          || {};
+
+    const stNote = r.st_note ? `
+      <div class="st-flip ${r.st_note.includes('BEAR')?'bear':''}">
+        ${r.st_note}
+      </div>` : '';
+
+    const lvHtml = [
+      lv.pivot && `<div class="lv"><span>Pivot</span>${lv.pivot}</div>`,
+      lv.s1    && `<div class="lv"><span>S1</span>${lv.s1}</div>`,
+      lv.r1    && `<div class="lv"><span>R1</span>${lv.r1}</div>`,
+      lv.ema20 && `<div class="lv"><span>EMA20</span>${lv.ema20}</div>`,
+      lv.ema50 && `<div class="lv"><span>EMA50</span>${lv.ema50}</div>`,
+      r.rsi    && `<div class="lv"><span>RSI</span>${r.rsi}</div>`,
+    ].filter(Boolean).join('');
+
+    return `
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-sym">${r.symbol}
+              <span class="sig ${sigCls}" style="margin-left:8px">${r.action}</span>
+              <span style="font-size:10px;color:#8B949E;margin-left:4px">${r.confidence}%</span>
+            </div>
+            <div class="card-chg">
+              <span class="${chgCls}">${chgSign}${r.day_change?.toFixed(2)}%</span>
+              <span style="font-size:10px;color:#8B949E;margin-left:6px">${r.date}</span>
+              ${r._live ? '<span style="font-size:9px;color:#3FB950;margin-left:4px">● LIVE</span>' : '<span style="font-size:9px;color:#484F58;margin-left:4px">prev close</span>'}
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div class="card-price ${chgCls}">₹${r.price?.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+            <div style="font-size:11px;margin-top:3px;color:${biasColor}">${r.bias}</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Ranges -->
+          <div class="range-row">
+            <div class="range-box">
+              <div class="range-lbl">Intraday Range</div>
+              <div class="range-val">${ir.low||'—'} – ${ir.high||'—'}</div>
+            </div>
+            ${wr.low ? `<div class="range-box">
+              <div class="range-lbl">Weekly Range</div>
+              <div class="range-val">${wr.low} – ${wr.high}</div>
+            </div>` : ''}
+          </div>
+
+          <!-- Key levels -->
+          <div class="levels">${lvHtml}</div>
+
+          <!-- Trade setup -->
+          <div class="setup-box">
+            <div class="setup-line">➡️ ${st.setup||'—'}</div>
+            ${st.breakout_setup ? `<div class="break-line">🚀 ${st.breakout_setup}</div>` : ''}
+          </div>
+
+          ${stNote}
+
+          <!-- Key note -->
+          <div style="font-size:11px;color:#8B949E;margin-top:8px;line-height:1.6">
+            ${r.key_note||''}
+            ${r.weekly_warn ? `<br><span style="color:#E3B341">${r.weekly_warn}</span>` : ''}
+          </div>
+
+          <!-- Full briefing text (collapsible) -->
+          <details style="margin-top:10px">
+            <summary style="font-size:11px;color:#58A6FF;cursor:pointer;user-select:none">
+              📋 Full briefing text
+              <button class="copy-btn" onclick="copyBriefing(event,'${r.symbol}')">Copy</button>
+            </summary>
+            <div class="briefing-text" id="bt-${r.symbol}">${r.briefing_text||''}</div>
+          </details>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function copyBriefing(e, sym){
+  e.preventDefault(); e.stopPropagation();
+  const el = document.getElementById('bt-'+sym);
+  if(!el) return;
+  navigator.clipboard.writeText(el.textContent).then(()=>{
+    const btn = e.target;
+    btn.textContent = 'Copied!';
+    btn.style.color = '#3FB950';
+    setTimeout(()=>{ btn.textContent='Copy'; btn.style.color=''; }, 2000);
+  });
+}
+
+// Theme
+(function(){
+  const css = localStorage.getItem('theme_css');
+  if(css){ const s=document.createElement('style'); s.textContent=css; document.head.appendChild(s); }
+})();
+
+// Auto-load on page open
+loadPreset('indices', document.querySelector('.tag.active'));
+runBriefing();
+</script>
+</body>
+</html>

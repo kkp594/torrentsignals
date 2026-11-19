@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shoonya Setup — StockIQ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;display:flex;justify-content:center;padding:40px 20px}
+.card{background:#161B22;border:1px solid #30363D;border-radius:12px;padding:28px;width:100%;max-width:560px}
+h1{font-size:18px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.sub{font-size:12px;color:#8B949E;margin-bottom:24px;line-height:1.6}
+.info{background:#0D1117;border:1px solid #21262D;border-left:3px solid #E3B341;border-radius:6px;padding:12px 14px;font-size:12px;color:#C9D1D9;line-height:1.9;margin-bottom:20px}
+.info code{background:#21262D;padding:1px 5px;border-radius:3px;font-family:monospace;font-size:11px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;color:#8B949E;margin-bottom:5px;font-weight:500}
+.field label b{color:#E6EDF3}
+.field .note{font-size:10px;color:#484F58;margin-left:6px}
+.inp-row{display:flex;gap:6px}
+input{flex:1;background:#0D1117;border:1px solid #30363D;border-radius:6px;padding:9px 12px;color:#E6EDF3;font-size:13px;outline:none;transition:border-color .2s;width:100%}
+input:focus{border-color:#58A6FF}
+input.highlight{border-color:#E3B341}
+.eye{background:#21262D;border:1px solid #30363D;border-radius:6px;padding:9px 12px;cursor:pointer;color:#8B949E;font-size:14px;flex-shrink:0}
+.eye:hover{background:#30363D;color:#E6EDF3}
+.hint{font-size:11px;margin-top:4px;min-height:16px}
+.btn{width:100%;border:none;border-radius:8px;padding:12px;cursor:pointer;font-size:14px;font-weight:700;margin-top:6px;transition:all .15s}
+.btn-save{background:#238636;color:#fff}
+.btn-save:hover{background:#2ea043}
+.btn-login{background:#1F6FEB;color:#fff;margin-top:10px}
+.btn-login:hover{background:#388BFD}
+.status{margin-top:14px;padding:12px 14px;border-radius:8px;font-size:13px;display:none;line-height:1.6}
+.ok {background:#1A3A2A;color:#3FB950;border:1px solid #238636;display:block}
+.err{background:#3A1A1A;color:#F85149;border:1px solid #B91C1C;display:block}
+.inf{background:#1A2A3A;color:#58A6FF;border:1px solid #1F6FEB;display:block}
+.divider{border:none;border-top:1px solid #21262D;margin:20px 0}
+a{color:#58A6FF}
+.current{background:#0D1117;border:1px solid #21262D;border-radius:8px;padding:12px;margin-bottom:20px;font-size:12px}
+.current table{width:100%;border-collapse:collapse}
+.current td{padding:4px 8px;vertical-align:top}
+.current td:first-child{color:#8B949E;width:110px}
+.current td:last-child{color:#E6EDF3;font-family:monospace}
+.ok-dot{color:#3FB950}
+.err-dot{color:#F85149}
+.warn-dot{color:#E3B341}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🦁 Shoonya Credential Setup</h1>
+  <p class="sub">Update your Shoonya API credentials. Works even without restarting the server.</p>
+
+  <div class="info">
+    <b>📋 From PRISM (image you sent) → what to paste where:</b><br><br>
+    ✅ <b>Client Id</b> = <code>FA107850_U</code> → <b>already correct in Vendor Code</b><br>
+    ❌ <b>Secret Code</b> (ends <code>...plA28kbj75</code>) → paste into <b>Secret Code / API Key</b> below<br>
+    ✅ <b>URL, IP fields</b> → leave <b>blank</b> in PRISM, not needed<br><br>
+    👉 <b>Only thing you need to do:</b><br>
+    1. On PRISM → click the <b>copy icon</b> next to Secret Code<br>
+    2. Paste it into the <b>Secret Code / API Key</b> field below<br>
+    3. Click <b>"Save &amp; Login"</b>
+  </div>
+
+  <!-- Current config -->
+  <div class="current" id="currentCfg">
+    <div style="color:#8B949E;font-size:11px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Currently saved</div>
+    <div id="cfgTable">Loading...</div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- User ID -->
+  <div class="field">
+    <label><b>User ID</b> <span class="note">(your Shoonya login ID)</span></label>
+    <input type="text" id="f_uid" value="FA107850" autocomplete="off">
+  </div>
+
+  <!-- Password -->
+  <div class="field">
+    <label><b>Password</b> <span class="note">(already saved — leave blank to keep)</span></label>
+    <div class="inp-row">
+      <input type="password" id="f_pwd" placeholder="Already saved — leave blank to keep" autocomplete="new-password">
+      <button class="eye" onclick="toggleVis('f_pwd',this)">👁</button>
+    </div>
+  </div>
+
+  <!-- Secret Code — THE ONE THING TO FILL -->
+  <div class="field" style="background:#1A1A0D;border:2px solid #E3B341;border-radius:8px;padding:14px">
+    <label style="color:#E3B341;font-size:13px"><b>⭐ Secret Code / API Key</b> — ONLY THIS NEEDS TO BE UPDATED</label>
+    <div style="font-size:11px;color:#8B949E;margin-bottom:8px">Copy the Secret Code from PRISM → click the copy icon → paste here</div>
+    <div class="inp-row">
+      <input type="password" id="f_api_key" placeholder="Paste full Secret Code from PRISM here" autocomplete="off"
+             oninput="checkSecretCode(this)" style="border-color:#E3B341" class="highlight">
+      <button class="eye" onclick="toggleVis('f_api_key',this)">👁</button>
+    </div>
+    <div class="hint" id="h_api_key" style="margin-top:6px">Current saved key starts with <code style="color:#F85149">54f365...</code> — this is the old expired key</div>
+  </div>
+
+  <!-- Vendor Code -->
+  <div class="field">
+    <label><b>Vendor Code</b> <span class="note">(= Client Id from PRISM — already correct)</span></label>
+    <input type="text" id="f_vc" value="FA107850_U" autocomplete="off">
+  </div>
+
+  <!-- factor2 -->
+  <div class="field">
+    <label><b>factor2 / MPIN</b> <span class="note">(already saved as <code>466205</code> — leave blank to keep, or update if wrong)</span></label>
+    <div class="inp-row">
+      <input type="password" id="f_factor2" placeholder="Leave blank to keep existing (466205)" autocomplete="off" oninput="checkFactor2(this)">
+      <button class="eye" onclick="toggleVis('f_factor2',this)">👁</button>
+    </div>
+    <div class="hint" id="h_factor2"></div>
+  </div>
+
+  <!-- IMEI -->
+  <div class="field" style="display:none">
+    <input type="hidden" id="f_imei" value="abc1234">
+  </div>
+
+  <button class="btn btn-save" onclick="saveConfig()">💾 Save Config</button>
+  <button class="btn btn-login" onclick="loginShoonya()">🔑 Save & Login to Shoonya</button>
+
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const API = 'http://localhost:5002';
+
+async function loadCurrentConfig() {
+  try {
+    const r = await fetch(`${API}/api/shoonya/config/get`);
+    if (!r.ok) throw new Error('route not available (restart server)');
+    const d = await r.json();
+    const ok  = v => v ? '<span class="ok-dot">✓</span>' : '<span class="err-dot">✗ missing</span>';
+    const f2  = d.factor2 || '';
+    const isDigits = /^\d{4,8}$/.test(f2);
+    const isBase32 = /^[A-Z2-7]+=*$/i.test(f2.replace(/ /g,'')) && f2.length > 8;
+    const f2type = !f2 ? '<span class="err-dot">not set</span>'
+                 : isBase32 ? '<span class="ok-dot">TOTP secret</span>'
+                 : isDigits ? '<span class="warn-dot">MPIN/PIN</span>'
+                 : '<span class="err-dot">unknown format</span>';
+
+    document.getElementById('cfgTable').innerHTML = `
+      <table>
+        <tr><td>User ID</td><td>${d.uid||'—'} ${ok(d.uid)}</td></tr>
+        <tr><td>Password</td><td>${d.has_pwd ? '<span class="ok-dot">✓ set</span>' : '<span class="err-dot">✗ not set</span>'}</td></tr>
+        <tr><td>API Key</td><td>${d.api_key||'—'} ${ok(d.api_key)}</td></tr>
+        <tr><td>Vendor Code</td><td>${d.vc||'—'} ${ok(d.vc)}</td></tr>
+        <tr><td>factor2</td><td>${f2 ? f2.slice(0,4)+'••' : '—'} ${f2type}</td></tr>
+        <tr><td>IMEI</td><td>${d.imei||'—'}</td></tr>
+      </table>`;
+
+    // Pre-fill non-sensitive fields
+    if (d.uid)  document.getElementById('f_uid').value  = d.uid;
+    if (d.vc)   document.getElementById('f_vc').value   = d.vc;
+    if (d.imei) document.getElementById('f_imei').value = d.imei;
+    if (d.factor2) document.getElementById('f_factor2').value = d.factor2;
+
+    // Status
+    const sr = await fetch(`${API}/api/shoonya/status`);
+    const sd = await sr.json();
+    if (sd.has_token) {
+      showStatus('✓ Already logged in — session is active for uid: ' + sd.uid, 'ok');
+    }
+  } catch(e) {
+    document.getElementById('cfgTable').innerHTML =
+      `<span class="warn-dot">⚠ Could not load: ${e.message}</span>`;
+  }
+}
+
+function toggleVis(id, btn) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁' : '🙈';
+}
+
+function checkSecretCode(el) {
+  const v = el.value.trim();
+  const h = document.getElementById('h_api_key');
+  if (!v) { h.textContent=''; return; }
+  if (v.length < 20) {
+    h.innerHTML = '<span class="err-dot">Too short — Secret Code should be much longer than this</span>';
+  } else if (v.length >= 32) {
+    h.innerHTML = `<span class="ok-dot">✓ Looks good (${v.length} chars)</span>`;
+  } else {
+    h.innerHTML = `<span class="warn-dot">${v.length} chars — verify it's the full Secret Code</span>`;
+  }
+}
+
+function checkFactor2(el) {
+  const v = el.value.trim();
+  const h = document.getElementById('h_factor2');
+  if (!v) { h.textContent=''; return; }
+  if (/^\d{4,8}$/.test(v)) {
+    h.innerHTML = '<span class="ok-dot">✓ MPIN/static PIN — will be sent as-is</span>';
+  } else if (/^[A-Z2-7]+=*$/i.test(v.replace(/ /g,'')) && v.length > 8) {
+    h.innerHTML = '<span class="ok-dot">✓ Base32 TOTP secret — OTP will be auto-generated</span>';
+  } else {
+    h.innerHTML = '<span class="err-dot">⚠ Unrecognised format — should be 4–8 digit MPIN or base32 TOTP secret</span>';
+  }
+}
+
+async function saveConfig() {
+  const body = {};
+  const uid     = document.getElementById('f_uid').value.trim();
+  const pwd     = document.getElementById('f_pwd').value.trim();
+  const api_key = document.getElementById('f_api_key').value.trim();
+  const vc      = document.getElementById('f_vc').value.trim();
+  const factor2 = document.getElementById('f_factor2').value.trim();
+  const imei    = document.getElementById('f_imei').value.trim();
+
+  if (uid)     body.uid     = uid;
+  if (pwd)     body.pwd     = pwd;
+  if (api_key) body.api_key = api_key;
+  if (vc)      body.vc      = vc;
+  if (factor2) body.factor2 = factor2;
+  if (imei)    body.imei    = imei;
+
+  if (Object.keys(body).length === 0) {
+    showStatus('Nothing to save — fill in at least one field', 'err'); return;
+  }
+
+  showStatus('Saving...', 'inf');
+  try {
+    const r = await fetch(`${API}/api/shoonya/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.success) {
+      showStatus('✓ Config saved successfully! Now click "Login to Shoonya".', 'ok');
+      // Clear password field
+      document.getElementById('f_pwd').value = '';
+      document.getElementById('f_pwd').placeholder = '(saved — type to change)';
+      // Reload current config display
+      loadCurrentConfig();
+    } else {
+      showStatus('✗ Save failed: ' + (d.error||'unknown'), 'err');
+    }
+  } catch(e) {
+    showStatus('✗ Could not reach server at ' + API + ' — is server.py running?', 'err');
+  }
+}
+
+async function loginShoonya() {
+  // Save first if there are unsaved changes
+  const api_key = document.getElementById('f_api_key').value.trim();
+  const factor2 = document.getElementById('f_factor2').value.trim();
+  const pwd     = document.getElementById('f_pwd').value.trim();
+  if (api_key || factor2 || pwd) {
+    await saveConfig();
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  showStatus('🔑 Logging in to Shoonya...', 'inf');
+  try {
+    const r = await fetch(`${API}/api/shoonya/login`, { method: 'POST' });
+    const d = await r.json();
+    if (d.success) {
+      showStatus('✅ Login successful! Shoonya is now active. You can close this page.', 'ok');
+    } else {
+      const e = (d.error||'').toLowerCase();
+      let hint = d.error || 'Login failed';
+      if (e.includes('invalid access type') || e.includes('400'))
+        hint += '<br>→ The <b>Secret Code</b> is wrong or expired. Copy it fresh from prism.shoonya.com → API Key.';
+      else if (e.includes('invalid vendor') || e.includes('vendor'))
+        hint += '<br>→ <b>Vendor Code</b> is wrong. Should be the <b>Client Id</b> from PRISM (e.g. FA107850_U).';
+      else if (e.includes('password') || e.includes('credential'))
+        hint += '<br>→ Wrong <b>Password</b>.';
+      else if (e.includes('otp') || e.includes('factor') || e.includes('totp'))
+        hint += '<br>→ Wrong <b>factor2 / MPIN</b>. Use your 4–6 digit MPIN from the Shoonya app.';
+      else if (e.includes('502') || e.includes('empty') || e.includes('expecting'))
+        hint += '<br>→ Shoonya server rejected the request. Most likely the Secret Code is wrong.';
+      document.getElementById('status').innerHTML = '✗ ' + hint;
+      document.getElementById('status').className = 'status err';
+    }
+  } catch(e) {
+    showStatus('✗ Could not reach server: ' + e.message, 'err');
+  }
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.innerHTML = msg;
+  el.className = 'status ' + type;
+}
+
+// Load on open
+loadCurrentConfig();
+</script>
+</body>
+</html>

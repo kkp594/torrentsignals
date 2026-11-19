@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Premium Calls — StockIQ</title>
+<link rel="stylesheet" href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#30363D;border-radius:4px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 16px;display:flex;align-items:center;gap:16px;height:52px;flex-wrap:wrap}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:8px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent;text-decoration:none;white-space:nowrap}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.page{max-width:1400px;margin:0 auto;padding:16px}
+
+/* toolbar */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;
+  background:#161B22;border:1px solid #30363D;border-radius:8px;padding:10px 14px}
+.sym-tags{display:flex;gap:4px;flex-wrap:wrap}
+.stag{background:#21262D;border:1px solid #30363D;border-radius:4px;
+  padding:3px 10px;color:#8B949E;cursor:pointer;font-size:11px;white-space:nowrap;user-select:none}
+.stag.on{border-color:#E3B341;color:#E3B341;background:#1A1A0D}
+.sinput{background:#0D1117;border:1px solid #30363D;border-radius:6px;
+  padding:6px 10px;color:#E6EDF3;font-size:13px;outline:none;width:160px}
+.sinput:focus{border-color:#58A6FF}
+.btn{border:none;border-radius:6px;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:600}
+.btn-gold{background:#B8860B;color:#fff}.btn-gold:hover{background:#DAA520}
+.btn-blue{background:#1F6FEB;color:#fff}.btn-blue:hover{background:#388BFD}
+.btn-ghost{background:#21262D;border:1px solid #30363D;color:#E6EDF3}.btn-ghost:hover{background:#30363D}
+
+/* conviction meter */
+.conv-bar-wrap{height:6px;background:#21262D;border-radius:3px;overflow:hidden;margin-top:4px}
+.conv-bar{height:6px;border-radius:3px;transition:width .5s}
+
+/* call cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:14px}
+.call-card{background:#161B22;border:1px solid #30363D;border-radius:10px;overflow:hidden;
+  transition:border-color .2s}
+.call-card:hover{border-color:#58A6FF}
+.call-card.bull{border-left:3px solid #3FB950}
+.call-card.bear{border-left:3px solid #F85149}
+.call-card.neut{border-left:3px solid #E3B341}
+
+/* card head */
+.ch{padding:12px 14px 8px;display:flex;justify-content:space-between;align-items:flex-start;
+    border-bottom:1px solid #21262D}
+.ch-sym{font-size:17px;font-weight:800;color:#E6EDF3}
+.ch-price{text-align:right}
+.ch-ltp{font-size:16px;font-weight:700}
+.ch-chg{font-size:11px;margin-top:1px}
+
+/* conviction badge */
+.conv-badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700}
+.ca{background:#1A3A2A;color:#3FB950}   /* A+ */
+.cb{background:#1A2A3A;color:#58A6FF}   /* A  */
+.cc{background:#2A2A1A;color:#E3B341}   /* B  */
+.cd{background:#21262D;color:#8B949E}   /* C  */
+
+/* levels grid */
+.lvl-row{display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px 4px}
+.lbox{background:#0D1117;border:1px solid #21262D;border-radius:5px;
+  padding:5px 10px;flex:1;min-width:100px;text-align:center}
+.lbox-lbl{font-size:9px;color:#8B949E;text-transform:uppercase;letter-spacing:.5px}
+.lbox-val{font-size:13px;font-weight:700;margin-top:2px}
+.bull-col{color:#3FB950} .bear-col{color:#F85149} .neut-col{color:#E3B341}
+
+/* call text */
+.call-text{font-size:12px;line-height:1.85;
+  background:#0D1117;margin:8px 14px;border-radius:6px;padding:10px 12px;
+  border-left:3px solid #30363D;color:#C9D1D9;font-family:'Cascadia Code','Consolas','Courier New',monospace}
+
+/* factors */
+.factors{padding:6px 14px 10px;display:flex;gap:6px;flex-wrap:wrap}
+.fchip{font-size:10px;padding:2px 8px;border-radius:8px;background:#21262D;color:#8B949E}
+.fchip.bull{background:#0D2010;color:#3FB950}
+.fchip.bear{background:#200D0D;color:#F85149}
+
+/* VIX bar */
+.vix-bar{display:flex;align-items:center;gap:8px;padding:6px 14px;
+  border-top:1px solid #21262D;font-size:11px;color:#8B949E}
+
+/* loading */
+.loading{color:#8B949E;padding:40px;text-align:center;font-size:14px}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid #30363D;
+  border-top-color:#E3B341;border-radius:50%;animation:spin .7s linear infinite;
+  vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* disclaimer */
+.disclaimer{background:#1A1A0D;border:1px solid #2A2A1A;border-radius:6px;
+  padding:10px 14px;font-size:11px;color:#484F58;line-height:1.7;margin-bottom:14px}
+.disclaimer b{color:#E3B341}
+</style>
+</head>
+<body>
+<nav>
+  <span class="logo"><img src="img/logo.png"/> StockIQ</span>
+  <a href="/">Hub<!-- Dashboard --></a>
+  <a href="/screener.html">Scan<!-- Screener --></a>
+  <a href="/tips.html"><!-- 💡 -->Tips<!-- Tips --></a>
+  <a href="/chart.html">Chart<!-- Charts --></a>
+  <a href="/options.html">Opts<!-- Options --></a>
+  <a href="/heatmap.html">Map<!-- Heatmap --></a>
+  <a href="/alerts.html"><!-- 🔔 --> Alert<!-- Alters --></a>
+  <a href="/intel.html"><!-- 🧠 --> Algo<!-- Logic --></a>
+  <a href="/gap-scanner.html"><!-- 📈 --> Gap<!-- Gaps --></a>
+  <a href="/backtester.html"><!-- 🧪 --> Test<!-- Backtest --></a>
+  <a href="/briefing.html"><!-- 📋 --> Brief<!-- Briefing --></a>
+  <a href="/corp-actions.html">Corp</a>
+  <a href="/notes.html">Log<!-- Notes --></a>
+  <a href="/premium.html" class="active" style="color:#E3B341">⭐ Premium</a>
+  <a href="/settings.html" style="margin-left:auto">⚙ Settings</a>
+</nav>
+
+<div class="page">
+
+  <div class="disclaimer">
+    <b>⚠ Disclaimer:</b> These calls are generated algorithmically using price action,
+    options OI, India VIX and technical indicators. They are <b>not financial advice</b>.
+    Markets can and do move against any analysis. Always trade with a stop loss.
+    Past accuracy does not guarantee future results.
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="sym-tags" id="symTags">
+      <span class="stag on" data-sym="NIFTY50">NIFTY50</span>
+      <span class="stag on" data-sym="BANKNIFTY">BANKNIFTY</span>
+      <span class="stag"    data-sym="FINNIFTY">FINNIFTY</span>
+      <span class="stag"    data-sym="GOLD">GOLD</span>
+      <span class="stag"    data-sym="SILVER">SILVER</span>
+      <span class="stag"    data-sym="CRUDEOIL">CRUDEOIL</span>
+    </div>
+    <input class="sinput" id="customSym" placeholder="Add symbol…"
+      oninput="this.value=this.value.toUpperCase()"
+      onkeydown="if(event.key==='Enter')addCustomSym()">
+    <button class="btn btn-ghost" onclick="addCustomSym()">+</button>
+    <button class="btn btn-gold" onclick="loadCalls()">⭐ Generate Calls</button>
+    <button class="btn btn-ghost" id="refreshBtn" onclick="loadCalls()" style="display:none">↺ Refresh</button>
+    <span id="lastUpdate" style="font-size:11px;color:#484F58;margin-left:auto"></span>
+  </div>
+
+  <!-- Cards -->
+  <div class="grid" id="cardsGrid">
+    <div class="loading" style="grid-column:1/-1">
+      Select symbols above and click ⭐ Generate Calls
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = '';
+
+// ── Symbol tag toggle ─────────────────────────────────────────────────────────
+document.getElementById('symTags').addEventListener('click', e=>{
+  const tag = e.target.closest('.stag');
+  if(tag) tag.classList.toggle('on');
+});
+
+function addCustomSym(){
+  const inp = document.getElementById('customSym');
+  const sym = inp.value.trim().toUpperCase();
+  if(!sym) return;
+  const tags = document.getElementById('symTags');
+  // Avoid duplicates
+  if([...tags.querySelectorAll('.stag')].some(t=>t.dataset.sym===sym)) {
+    inp.value=''; return;
+  }
+  const tag = document.createElement('span');
+  tag.className='stag on'; tag.dataset.sym=sym; tag.textContent=sym;
+  tags.appendChild(tag);
+  inp.value='';
+}
+
+function getSelectedSymbols(){
+  return [...document.querySelectorAll('.stag.on')].map(t=>t.dataset.sym);
+}
+
+// ── Load calls ────────────────────────────────────────────────────────────────
+let _loading = false;
+async function loadCalls(){
+  if(_loading) return;
+  const syms = getSelectedSymbols();
+  if(!syms.length){ alert('Select at least one symbol'); return; }
+
+  _loading = true;
+  const grid = document.getElementById('cardsGrid');
+  grid.innerHTML = `<div class="loading" style="grid-column:1/-1">
+    <span class="spinner"></span>Generating premium calls for ${syms.join(', ')}...
+    <br><span style="font-size:11px;color:#484F58;margin-top:6px;display:block">
+    Fetching live options OI, India VIX and indicator confluence...</span>
+  </div>`;
+
+  try{
+    const r = await fetch(`${API}/api/premium-call/batch`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({symbols: syms})
+    });
+    const d = await r.json();
+    if(d.error){ grid.innerHTML=`<div class="loading" style="color:#F85149">⚠ ${d.error}</div>`; return; }
+
+    grid.innerHTML = '';
+    (d.calls||[]).forEach(c => grid.appendChild(buildCard(c)));
+
+    document.getElementById('lastUpdate').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    document.getElementById('refreshBtn').style.display = 'inline-block';
+  }catch(e){
+    grid.innerHTML=`<div class="loading" style="color:#F85149">⚠ ${e.message}</div>`;
+  } finally {
+    _loading = false;
+  }
+}
+
+// ── Card builder ──────────────────────────────────────────────────────────────
+function buildCard(c){
+  if(c.error){
+    const el = document.createElement('div');
+    el.className = 'call-card neut';
+    el.innerHTML = `<div class="ch"><span class="ch-sym">${c.symbol}</span>
+      <span style="color:#F85149;font-size:12px">⚠ ${c.error}</span></div>`;
+    return el;
+  }
+
+  const bias  = c.bias || 'neutral';
+  const cv    = c.conviction || {};
+  const lv    = c.levels    || {};
+  const setup = c.setup     || {};
+  const ind   = c.indicators|| {};
+  const opt   = c.options   || {};
+  const score = cv.score    || 0;
+  const chgCls = (c.day_change||0) >= 0 ? 'bull-col' : 'bear-col';
+  const biasCls = bias === 'bullish' ? 'bull' : bias === 'bearish' ? 'bear' : 'neut';
+
+  // Conviction badge class
+  const convCls = score >= 80 ? 'ca' : score >= 65 ? 'cb' : score >= 50 ? 'cc' : 'cd';
+  const convBarColor = score >= 80 ? '#3FB950' : score >= 65 ? '#58A6FF' : score >= 50 ? '#E3B341' : '#8B949E';
+
+  // Direction arrow
+  const dirArrow = setup.direction === 'BUY' ? '🟢 BUY' : setup.direction === 'SELL' ? '🔴 SELL' : '🟡 RANGE';
+
+  // Aligned factors (top 3)
+  const aligned = bias === 'bullish'
+    ? (cv.bull_factors||[]).slice(0,3)
+    : (cv.bear_factors||[]).slice(0,3);
+  const neutral = (cv.neutral||[]).slice(0,2);
+
+  const el = document.createElement('div');
+  el.className = `call-card ${biasCls}`;
+  el.innerHTML = `
+    <!-- Head -->
+    <div class="ch">
+      <div>
+        <div class="ch-sym">${c.symbol}
+          <span class="conv-badge ${convCls}" style="margin-left:8px">${cv.grade||'—'}</span>
+          <span style="margin-left:6px;font-size:12px">${dirArrow}</span>
+        </div>
+        <div style="font-size:11px;color:#8B949E;margin-top:3px">
+          PCR ${opt.pcr||'—'} &nbsp;|&nbsp;
+          ATM IV ${ind.atm_iv||'—'}% &nbsp;|&nbsp;
+          VIX ${c.vix?c.vix.toFixed(1)+'%':'—'} &nbsp;|&nbsp;
+          ${c.date||''}
+        </div>
+        <div class="conv-bar-wrap" style="width:140px;margin-top:5px">
+          <div class="conv-bar" style="width:${score}%;background:${convBarColor}"></div>
+        </div>
+        <div style="font-size:10px;color:#484F58;margin-top:2px">Conviction ${score}/100</div>
+      </div>
+      <div class="ch-price">
+        <div class="ch-ltp">₹${(c.price||0).toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+        <div class="ch-chg ${chgCls}">${(c.day_change||0)>=0?'+':''}${c.day_change||0}%</div>
+      </div>
+    </div>
+
+    <!-- Level boxes -->
+    <div class="lvl-row">
+      <div class="lbox">
+        <div class="lbox-lbl">Support</div>
+        <div class="lbox-val bull-col">${lv.intra_sup||'—'}</div>
+        <div style="font-size:9px;color:#484F58">${lv.sup_label||''}</div>
+      </div>
+      <div class="lbox">
+        <div class="lbox-lbl">Resistance</div>
+        <div class="lbox-val bear-col">${lv.intra_res||'—'}</div>
+        <div style="font-size:9px;color:#484F58">${lv.res_label||''}</div>
+      </div>
+      <div class="lbox">
+        <div class="lbox-lbl">SL</div>
+        <div class="lbox-val" style="color:#BC8CFF">${setup.sl||'—'}</div>
+      </div>
+      <div class="lbox">
+        <div class="lbox-lbl">Target 1</div>
+        <div class="lbox-val neut-col">${setup.target1||'—'}</div>
+      </div>
+      <div class="lbox">
+        <div class="lbox-lbl">Target 2</div>
+        <div class="lbox-val neut-col">${setup.target2||'—'}</div>
+      </div>
+    </div>
+
+    <!-- Call text — rendered with styled sections -->
+    <div class="call-text">${formatCallText(c.call_text||'')}</div>
+
+    <!-- Factor chips -->
+    <div class="factors">
+      ${aligned.map(f=>`<span class="fchip ${biasCls}">${f}</span>`).join('')}
+      ${neutral.map(f=>`<span class="fchip">${f}</span>`).join('')}
+    </div>
+
+    <!-- VIX + RSI mini bar -->
+    <div class="vix-bar">
+      RSI ${ind.rsi?ind.rsi.toFixed(0):'—'}
+      &nbsp;|&nbsp; EMA50 ${ind.ema50?ind.ema50.toFixed(0):'—'}
+      &nbsp;|&nbsp; ATR ${ind.atr||'—'} pts
+      &nbsp;|&nbsp; Weekly: ${lv.week_low||'—'}–${lv.week_high||'—'}
+      <button onclick="loadSingleCall('${c.symbol}')" title="Refresh this symbol"
+        style="margin-left:auto;background:none;border:none;color:#484F58;cursor:pointer;font-size:12px">↺</button>
+    </div>`;
+
+  return el;
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function loadSingleCall(sym){
+  const grid = document.getElementById('cardsGrid');
+  const existingCards = [...grid.querySelectorAll('.call-card')];
+  try{
+    const r = await fetch(`${API}/api/premium-call/${sym}`);
+    const c = await r.json();
+    if(c.error){ console.warn(sym, c.error); return; }
+    const newCard = buildCard(c);
+    const old = existingCards.find(el=>el.querySelector('.ch-sym')?.textContent?.includes(sym));
+    if(old) grid.replaceChild(newCard, old);
+    else    grid.prepend(newCard);
+  }catch(e){ console.error(e); }
+}
+
+// ── Format call text with styled sections ────────────────────────────────────
+function formatCallText(raw){
+  if(!raw) return '';
+  const lines = raw.split('\n');
+  let html = '';
+  for(const line of lines){
+    const t = line.trim();
+    if(!t){ html += '<br>'; continue; }
+
+    // Header line: #NIFTY50  22 Jul
+    if(t.startsWith('#')){
+      html += `<span style="color:#E3B341;font-weight:700;font-size:13px">${escHtml(t)}</span><br>`;
+
+    // Bias line: [BULLISH] | Conviction...
+    } else if(t.startsWith('[BULL')){
+      html += `<span style="color:#3FB950;font-weight:600">${escHtml(t)}</span><br>`;
+    } else if(t.startsWith('[BEAR')){
+      html += `<span style="color:#F85149;font-weight:600">${escHtml(t)}</span><br>`;
+    } else if(t.startsWith('[NEUTRAL')){
+      html += `<span style="color:#E3B341;font-weight:600">${escHtml(t)}</span><br>`;
+
+    // Range lines
+    } else if(t.startsWith('Intraday range') || t.startsWith('Weekly range')){
+      html += `<span style="color:#8B949E">${escHtml(t)}</span><br>`;
+
+    // Trade setup entry line
+    } else if(t.startsWith('>> Buy') || t.startsWith('>> Sell')){
+      const col = t.includes('Buy') ? '#3FB950' : '#F85149';
+      html += `<span style="color:${col};font-weight:700;font-size:13px">${escHtml(t)}</span><br>`;
+
+    // TGT/SL line
+    } else if(t.startsWith('TGT') || t.startsWith('SL') || (t.includes('TGT') && t.includes('SL'))){
+      html += `<span style="color:#E3B341;font-weight:600">${escHtml(t)}</span><br>`;
+
+    // Momentum/Breakdown trigger
+    } else if(t.includes('sustenance') || t.includes('Momentum') || t.includes('Breakdown') || t.includes('->') || t.includes('Directional')){
+      html += `<span style="color:#58A6FF">${escHtml(t)}</span><br>`;
+
+    // RANGE block header
+    } else if(t.startsWith('[RANGE]')){
+      html += `<span style="color:#E3B341;font-weight:600">${escHtml(t)}</span><br>`;
+
+    // Aligned factors
+    } else if(t.startsWith('[+]')){
+      html += `<span style="color:#3FB950;font-size:11px">${escHtml(t)}</span><br>`;
+
+    // Watch / caution
+    } else if(t.startsWith('[!]')){
+      html += `<span style="color:#E3B341;font-size:11px">${escHtml(t)}</span><br>`;
+
+    // VIX / PCR / OI notes
+    } else if(t.startsWith('IndiaVIX') || t.startsWith('PCR') || t.startsWith('Max Call')){
+      html += `<span style="color:#8B949E;font-size:11px">${escHtml(t)}</span><br>`;
+
+    // Structure note (EMA / positional)
+    } else if(t.includes('EMA') || t.includes('uptrend') || t.includes('recovery') || t.includes('Consolidat')){
+      html += `<span style="color:#8B949E;font-style:italic">${escHtml(t)}</span><br>`;
+
+    } else {
+      html += `${escHtml(t)}<br>`;
+    }
+  }
+  return html;
+}
+
+// ── Auto-refresh during market hours ─────────────────────────────────────────
+let _autoRefreshTimer = null;
+
+function isMarketHours(){
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  const mins = h * 60 + m;
+  // NSE: 9:15 - 15:30 IST
+  return mins >= 555 && mins <= 930;
+}
+
+function startAutoRefreshIfMarket(){
+  if(!isMarketHours()) return;
+  if(_autoRefreshTimer) return;
+  _autoRefreshTimer = setInterval(()=>{
+    const syms = getSelectedSymbols();
+    if(syms.length && document.querySelectorAll('.call-card').length > 0){
+      loadCalls();
+    }
+  }, 5 * 60 * 1000);  // every 5 minutes
+}
+
+// Check on load and every minute
+setInterval(()=>{
+  if(isMarketHours()) startAutoRefreshIfMarket();
+  else if(_autoRefreshTimer){ clearInterval(_autoRefreshTimer); _autoRefreshTimer=null; }
+  // Update market status dot
+  const dot = document.getElementById('mktDot');
+  if(dot) dot.style.background = isMarketHours() ? '#3FB950' : '#30363D';
+}, 60000);
+
+// Market status dot in toolbar
+document.addEventListener('DOMContentLoaded', ()=>{
+  const toolbar = document.querySelector('.toolbar');
+  if(toolbar){
+    const dot = document.createElement('span');
+    dot.id = 'mktDot';
+    dot.title = 'Market status';
+    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:4px;flex-shrink:0';
+    dot.style.background = isMarketHours() ? '#3FB950' : '#30363D';
+    toolbar.appendChild(dot);
+    const lbl = document.createElement('span');
+    lbl.style.cssText = 'font-size:11px;color:#8B949E';
+    lbl.textContent = isMarketHours() ? 'Market Open' : 'Market Closed';
+    dot.title = lbl.textContent;
+    toolbar.appendChild(lbl);
+  }
+  startAutoRefreshIfMarket();
+});
+
+// Keyboard shortcut: G to generate calls
+document.addEventListener('keydown', e=>{
+  if(e.key==='g' || e.key==='G'){
+    if(e.target.tagName!=='INPUT' && e.target.tagName!=='TEXTAREA') loadCalls();
+  }
+});
+
+// Keyboard shortcut: Enter on custom sym input
+document.getElementById('customSym').addEventListener('keydown', e=>{
+  if(e.key==='Enter') addCustomSym();
+});
+</script>
+</body>
+</html>

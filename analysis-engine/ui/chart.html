@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chart</title>
+<link rel="stylesheet"href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 20px;display:flex;align-items:center;gap:24px;height:52px}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:16px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.card{background:#161B22;border:1px solid #30363D;border-radius:8px;padding:16px;margin-bottom:16px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.toolbar input{background:#0D1117;border:1px solid #30363D;border-radius:6px;padding:6px 12px;color:#E6EDF3;font-size:14px;outline:none;width:200px}
+.toolbar input:focus{border-color:#58A6FF}
+.btn{background:#21262D;border:1px solid #30363D;border-radius:6px;padding:5px 12px;color:#8B949E;cursor:pointer;font-size:12px}
+.btn:hover,.btn.active{background:#1C2128;border-color:#58A6FF;color:#58A6FF}
+.btn.go{background:#1F6FEB;border-color:#1F6FEB;color:#fff}
+.btn.go:hover{background:#388BFD}
+canvas{display:block}
+.chart-wrap{position:relative;background:#131722;border-radius:6px;overflow:hidden;border:1px solid #1e2530}
+.loading{color:#8B949E;padding:40px;text-align:center;font-size:16px}
+.up{color:#3FB950}.down{color:#F85149}
+.ind-toggle{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.ind-btn{background:#21262D;border:1px solid #30363D;border-radius:4px;padding:3px 10px;color:#8B949E;cursor:pointer;font-size:11px;user-select:none}
+.ind-btn.active{border-color:#58A6FF;color:#58A6FF}
+.ind-sep{font-size:11px;color:#484F58;margin:0 4px}
+#infoBar{display:flex;gap:14px;flex-wrap:wrap;align-items:baseline;padding:8px 10px 6px;font-size:12px;border-bottom:1px solid #1e2530;margin-bottom:8px}
+#infoBar .sym{font-weight:700;font-size:13px}
+#infoBar .tf{color:#787b86;font-size:11px}
+#infoBar .ohlc{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#b2b5be}
+#infoBar .ohlc b{font-weight:600}
+#infoBar .iv{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;white-space:nowrap}
+#mainBox{position:relative}
+#tip{position:absolute;display:none;pointer-events:none;background:rgba(19,23,34,.95);border:1px solid #363c4e;border-radius:4px;padding:6px 8px;font-size:11px;font-family:ui-monospace,Consolas,monospace;line-height:1.5;z-index:5;white-space:nowrap}
+.subLabel{font-size:10px;color:#787b86;padding:2px 10px 0}
+</style>
+</head>
+<body>
+<nav>
+  <span class="logo"><img src="img/logo.png"/> StockIQ</span>
+  <a href="/">Hub<!-- Dashboard --></a>
+  <a href="/screener.html">Scan<!-- Screener --></a>
+  <a href="/tips.html"><!-- 💡 -->Tips<!-- Tips --></a>
+  <a href="/chart.html" class="active">Chart<!-- Charts --></a>
+  <a href="/options.html">Opts<!-- Options --></a>
+  <a href="/heatmap.html">Map<!-- Heatmap --></a>
+  <a href="/alerts.html"><!-- 🔔 --> Alert<!-- Alters --></a>
+  <a href="/intel.html"><!-- 🧠 --> Algo<!-- Logic --></a>
+  <a href="/gap-scanner.html"><!-- 📈 --> Gap<!-- Gaps --></a>
+  <a href="/backtester.html"><!-- 🧪 --> Test<!-- Backtest --></a>
+  <a href="/briefing.html"><!-- 📋 --> Brief<!-- Briefing --></a>
+  <a href="/corp-actions.html">Corp</a>
+  <a href="/notes.html">Log<!-- Notes --></a>
+  <a href="/premium.html" style="color:#E3B341">⭐ Premium</a>
+  <a href="/settings.html" style="margin-left:auto">⚙ Settings</a>
+  <span id="marketDot" style="width:8px;height:8px;border-radius:50%;background:#30363D;display:inline-block;margin-left:8px"></span>
+  <span id="marketLabel" style="font-size:11px;color:#8B949E">—</span>
+</nav>
+
+<div class="container">
+  <div class="toolbar">
+    <div style="position:relative;flex:1;min-width:200px">
+      <input id="symInput" type="text" placeholder="Symbol (e.g. RELIANCE)" autocomplete="off"
+        oninput="showSearchResults(this.value)" onkeydown="if(event.key==='Enter') loadChart()" style="width:100%">
+      <button id="clearBtn" onclick="clearChartSearch()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#8B949E;cursor:pointer;font-size:14px;pointer-events:auto;display:none">×</button>
+      <div id="symResults" style="display:none;position:absolute;top:100%;left:0;right:0;background:#161B22;
+         border:1px solid #30363D;border-radius:6px;max-height:250px;overflow-y:auto;z-index:1000;
+         box-shadow:0 4px 12px rgba(0,0,0,0.5);width:100%;box-sizing:border-box">
+        <div id="symResultsList"></div>
+      </div>
+    </div>
+    <datalist id="symList"></datalist>
+    <span style="font-size:10px;color:#484F58;white-space:nowrap">Intra:</span>
+    <button class="btn intra-btn" data-interval="1"  onclick="setIntraday(this)">1m</button>
+    <button class="btn intra-btn" data-interval="5"  onclick="setIntraday(this)">5m</button>
+    <button class="btn intra-btn" data-interval="15" onclick="setIntraday(this)">15m</button>
+    <button class="btn intra-btn" data-interval="30" onclick="setIntraday(this)">30m</button>
+    <span style="font-size:10px;color:#484F58;margin-left:4px;white-space:nowrap">Daily:</span>
+    <button class="btn period-btn active" data-period="1mo"  onclick="setPeriod(this)">1M</button>
+    <button class="btn period-btn"        data-period="3mo"  onclick="setPeriod(this)">3M</button>
+    <button class="btn period-btn"        data-period="6mo"  onclick="setPeriod(this)">6M</button>
+    <button class="btn period-btn"        data-period="1y"   onclick="setPeriod(this)">1Y</button>
+    <button class="btn period-btn"        data-period="2y"   onclick="setPeriod(this)">2Y</button>
+    <button class="btn period-btn"        data-period="5y"   onclick="setPeriod(this)">5Y</button>
+    <button class="btn period-btn"        data-period="max"  onclick="setPeriod(this)">Max</button>
+    <button class="btn go" onclick="loadChart()">Load</button>
+    <span id="priceTag" style="font-size:16px;font-weight:700;margin-left:8px"></span>
+    <span id="chgTag"   style="font-size:13px;margin-left:4px"></span>
+  </div>
+
+  <div class="card" style="padding:10px">
+    <div id="infoBar"><span style="color:#484F58">Enter a symbol and click Load</span></div>
+    <div class="ind-toggle">
+      <span style="font-size:11px;color:#8B949E;margin-right:4px">Overlay:</span>
+      <div class="ind-btn active" id="tog-ema20"  onclick="toggleInd('ema20')">EMA20</div>
+      <div class="ind-btn active" id="tog-ema50"  onclick="toggleInd('ema50')">EMA50</div>
+      <div class="ind-btn"        id="tog-ema100" onclick="toggleInd('ema100')">EMA100</div>
+      <div class="ind-btn"        id="tog-ema200" onclick="toggleInd('ema200')">EMA200</div>
+      <div class="ind-btn"        id="tog-bb"     onclick="toggleInd('bb')">Bollinger</div>
+      <div class="ind-btn"        id="tog-vwap"   onclick="toggleInd('vwap')">VWAP</div>
+      <span class="ind-sep">Sub:</span>
+      <div class="ind-btn active" id="tog-vol"    onclick="toggleInd('vol')">Volume</div>
+      <div class="ind-btn active" id="tog-rsi"    onclick="toggleInd('rsi')">RSI</div>
+      <div class="ind-btn"        id="tog-macd"   onclick="toggleInd('macd')">MACD</div>
+      <div class="ind-btn"        id="tog-st"     onclick="toggleInd('st')">Supertrend</div>
+      <div class="ind-btn"        id="tog-srsi"   onclick="toggleInd('srsi')">StochRSI</div>
+      <div class="ind-btn"        id="tog-sqz"    onclick="toggleInd('sqz')">Squeeze</div>
+      <div class="ind-btn"        id="tog-vp"     onclick="toggleInd('vp')">Vol Profile</div>
+      <div class="ind-btn"        id="tog-sig"    onclick="toggleInd('sig')">Signals</div>
+    </div>
+    <div id="chartWrap" class="chart-wrap">
+      <div class="loading" id="chartLoading">Enter a symbol and click Load</div>
+      <div id="mainBox" style="display:none">
+        <canvas id="mainCanvas"></canvas>
+        <div id="tip"></div>
+      </div>
+      <div id="rsiBox" style="display:none"><div class="subLabel">RSI (14)</div><canvas id="rsiCanvas"></canvas></div>
+      <div id="macdBox" style="display:none"><div class="subLabel">MACD (12, 26, 9)</div><canvas id="macdCanvas"></canvas></div>
+      <div id="srsiBox" style="display:none"><div class="subLabel">Stochastic RSI (14, 14, 3, 3)</div><canvas id="srsiCanvas"></canvas></div>
+      <div id="sqzBox" style="display:none"><div class="subLabel">TTM Squeeze</div><canvas id="sqzCanvas"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "";
+let ohlcv = [], indicators = {}, period = "1mo";
+let showInds = {ema20:true, ema50:true, ema100:false, ema200:false, bb:false, vwap:false, vol:true, rsi:true, macd:false, st:false, srsi:false, sqz:false, vp:false, sig:true};
+let liveInterval = null;
+let currentSym = "";
+let intradayMode = false;
+let intradayInterval = "";
+let hoverIdx = -1, hoverXY = null;
+
+// Zerodha / TradingView palette
+const C = {
+  bg:"#131722", grid:"rgba(46,52,64,0.55)", gridSoft:"rgba(46,52,64,0.28)",
+  txt:"#b2b5be", dim:"#787b86", up:"#26a69a", down:"#ef5350",
+  upWick:"#26a69a", downWick:"#ef5350",
+  ema20:"#2962ff", ema50:"#ff6d00", ema100:"#089981", ema200:"#f23645",
+  bb:"#787b86", vwap:"#e040fb", stUp:"#089981", stDn:"#f23645",
+  volUp:"rgba(38,166,154,0.55)", volDn:"rgba(239,83,80,0.55)",
+  lastUp:"#089981", lastDn:"#f23645"
+};
+
+fetch(`${API}/api/symbols`).then(r=>r.json()).then(syms=>{
+  const dl = document.getElementById("symList");
+  syms.forEach(s=>{ const o=document.createElement("option"); o.value=s; dl.appendChild(o); });
+}).catch(()=>{});
+
+fetch(`${API}/api/market-status`).then(r=>r.json()).then(ms=>{
+  const dot=document.getElementById('marketDot'), lbl=document.getElementById('marketLabel');
+  if(ms.is_open){ dot.style.background='#3FB950'; dot.style.boxShadow='0 0 6px #3FB950'; lbl.textContent='Live'; lbl.style.color='#3FB950'; }
+  else { dot.style.background='#F85149'; lbl.textContent='Closed'; }
+  window._marketOpen = ms.is_open;
+}).catch(()=>{});
+
+(function(){ const css=localStorage.getItem('theme_css'); if(css){ const s=document.createElement('style'); s.textContent=css; document.head.appendChild(s); }})();
+
+const urlSym = new URLSearchParams(location.search).get("symbol");
+if(urlSym){ document.getElementById("symInput").value=urlSym; setTimeout(loadChart,300); }
+
+const HISTORY_KEY = 'sym_search_history';
+function getHistory(){ try{ return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]'); }catch(e){ return []; } }
+function addHistory(sym){ const h=getHistory().filter(s=>s!==sym); h.unshift(sym); localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(0,10))); }
+function removeHistory(sym,e){ e.stopPropagation(); const h=getHistory().filter(s=>s!==sym); localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); showSearchResults(document.getElementById('symInput').value||''); }
+
+function hlMatch(text, q){
+  if(!q) return `<span style="color:#58A6FF;font-weight:600">${text}</span>`;
+  const i = text.toUpperCase().indexOf(q.toUpperCase());
+  if(i!==0) return `<span style="color:#58A6FF;font-weight:600">${text}</span>`;
+  return `<span style="background:#1F6FEB;border-radius:2px;padding:0 1px;color:#fff;font-weight:600">${text.slice(0,q.length)}</span><span style="color:#58A6FF;font-weight:600">${text.slice(q.length)}</span>`;
+}
+
+function showSearchResults(query){
+  const resultsEl = document.getElementById("symResults");
+  const listEl    = document.getElementById("symResultsList");
+  const clearBtn  = document.getElementById("clearBtn");
+  if(!resultsEl||!listEl) return;
+  const allSyms = Array.from(document.querySelectorAll("#symList option")).map(o=>o.value);
+  if(!query || query.length < 1){
+    clearBtn.style.display = "none";
+    const hist = getHistory();
+    if(!hist.length){ resultsEl.style.display="none"; return; }
+    listEl.innerHTML = hist.map(sym=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;cursor:pointer;border-bottom:1px solid #1C2128"
+        onmouseover="this.style.background='#21262D'" onmouseout="this.style.background='transparent'"
+        onclick="selectSymbol('${sym}')">
+        <span><span style="font-size:10px;color:#8B949E;margin-right:6px">↺</span><span style="color:#58A6FF;font-weight:600">${sym}</span></span>
+        <span onclick="removeHistory('${sym}',event)" style="color:#8B949E;font-size:11px;padding:2px 4px;cursor:pointer" title="Remove">✕</span>
+      </div>`).join('');
+    resultsEl.style.display = "block";
+    return;
+  }
+  clearBtn.style.display = "block";
+  const q = query.toUpperCase();
+  const startsWith = allSyms.filter(s=>s.startsWith(q));
+  const contains   = allSyms.filter(s=>!s.startsWith(q)&&s.includes(q));
+  const matches = [...startsWith, ...contains].slice(0,12);
+  if(!matches.length){ resultsEl.style.display="none"; return; }
+  listEl.innerHTML = matches.map(sym=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;cursor:pointer;border-bottom:1px solid #1C2128"
+      onmouseover="this.style.background='#21262D'" onmouseout="this.style.background='transparent'"
+      onclick="selectSymbol('${sym}')">
+      <span>${hlMatch(sym, query)}</span>
+      <span style="font-size:10px;color:#8B949E">NSE</span>
+    </div>`).join('');
+  resultsEl.style.display = "block";
+}
+
+function selectSymbol(sym){
+  document.getElementById("symInput").value = sym;
+  document.getElementById("symResults").style.display = "none";
+  addHistory(sym);
+}
+function hideResults(e){
+  const resultsEl = document.getElementById("symResults");
+  if(resultsEl && !resultsEl.contains(e.target) && e.target.id !== "symInput"){
+    resultsEl.style.display = "none";
+  }
+}
+document.addEventListener("click", hideResults);
+function clearChartSearch(){
+  document.getElementById("symInput").value = "";
+  document.getElementById("symResults").style.display = "none";
+  document.getElementById("clearBtn").style.display = "none";
+}
+function highlightMatch(text, query){ return hlMatch(text, query); }
+
+function setPeriod(btn){
+  document.querySelectorAll(".period-btn").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".intra-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  period = btn.dataset.period;
+  intradayMode = false;
+  intradayInterval = "";
+  if(ohlcv.length) loadChart();
+}
+function setIntraday(btn){
+  document.querySelectorAll(".period-btn").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".intra-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  intradayInterval = btn.dataset.interval;
+  intradayMode = true;
+  if(currentSym) loadChart();
+}
+function toggleInd(name){
+  showInds[name] = !showInds[name];
+  const el = document.getElementById(`tog-${name}`);
+  if(el) el.classList.toggle("active", showInds[name]);
+  if(ohlcv.length) drawAll();
+}
+
+// ── JS indicator helpers (intraday overlays) ──────────────────────────────
+function jsEMA(vals, p){
+  const out = new Array(vals.length).fill(null);
+  if(vals.length < p) return out;
+  const k = 2/(p+1);
+  let e = vals.slice(0,p).reduce((a,b)=>a+b,0)/p;
+  out[p-1] = e;
+  for(let i=p;i<vals.length;i++){ e = vals[i]*k + e*(1-k); out[i]=e; }
+  return out;
+}
+function jsRSI(vals, p=14){
+  const out = new Array(vals.length).fill(null);
+  if(vals.length <= p) return out;
+  let g=0,l=0;
+  for(let i=1;i<=p;i++){ const d=vals[i]-vals[i-1]; g+=Math.max(d,0); l+=Math.max(-d,0); }
+  g/=p; l/=p;
+  out[p] = l===0?100:100-100/(1+g/l);
+  for(let i=p+1;i<vals.length;i++){
+    const d=vals[i]-vals[i-1];
+    g=(g*(p-1)+Math.max(d,0))/p; l=(l*(p-1)+Math.max(-d,0))/p;
+    out[i]= l===0?100:+(100-100/(1+g/l)).toFixed(2);
+  }
+  return out;
+}
+function jsVWAP(bars){
+  const out=[]; let pv=0, vv=0, day="";
+  for(const b of bars){
+    const d=(b.date||"").slice(0,10);
+    if(d!==day){ day=d; pv=0; vv=0; }
+    const tp=(b.high+b.low+b.close)/3;
+    pv+=tp*(b.volume||0); vv+=(b.volume||0);
+    out.push(vv?pv/vv:null);
+  }
+  return out;
+}
+function jsBB(vals, p=20, m=2){
+  const up=[], mid=[], lo=[];
+  for(let i=0;i<vals.length;i++){
+    if(i<p-1){ up.push(null); mid.push(null); lo.push(null); continue; }
+    const w=vals.slice(i-p+1,i+1);
+    const mean=w.reduce((a,b)=>a+b,0)/p;
+    const sd=Math.sqrt(w.reduce((a,b)=>a+(b-mean)*(b-mean),0)/p);
+    mid.push(mean); up.push(mean+m*sd); lo.push(mean-m*sd);
+  }
+  return [up,mid,lo];
+}
+
+function loadChart(){
+  const sym = document.getElementById("symInput").value.trim().toUpperCase();
+  if(!sym) return;
+  currentSym = sym;
+  addHistory(sym);
+  const loading = document.getElementById("chartLoading");
+  if(liveInterval){ clearInterval(liveInterval); liveInterval=null; }
+
+  if(intradayMode && intradayInterval){
+    const labelMap = {"1":"1 Min","5":"5 Min","15":"15 Min","30":"30 Min"};
+    loading.style.display="block";
+    loading.textContent = `Loading ${sym} intraday ${labelMap[intradayInterval]||intradayInterval}m...`;
+    fetch(`${API}/api/intraday/${sym}?interval=${intradayInterval}&days=1`)
+      .then(r=>r.json())
+      .then(resp=>{
+        if(resp.error){ loading.textContent = resp.error; return; }
+        const bars = resp.data || [];
+        if(!bars.length){ loading.textContent = `No intraday data for ${sym} — market may be closed`; return; }
+        ohlcv = bars;
+        const closes = bars.map(b=>b.close);
+        indicators = {
+          _intraday:true,
+          ema20: jsEMA(closes,20), ema50: jsEMA(closes,50),
+          ema100: jsEMA(closes,100), ema200: jsEMA(closes,200),
+          rsi14: jsRSI(closes,14), vwap: jsVWAP(bars), bb: jsBB(closes,20,2)
+        };
+        loading.style.display="none";
+        hideSkel(false);
+        computeIntradayST();
+        updatePriceTag(); updateInfoBar();
+        drawAll();
+        if(window._marketOpen){
+          liveInterval = setInterval(()=>{
+            fetch(`${API}/api/intraday/${sym}?interval=${intradayInterval}&days=1`)
+              .then(r=>r.json()).then(r2=>{
+                if(r2.data && r2.data.length){
+                  ohlcv = r2.data;
+                  const c2 = ohlcv.map(b=>b.close);
+                  indicators.ema20=jsEMA(c2,20); indicators.ema50=jsEMA(c2,50);
+                  indicators.ema100=jsEMA(c2,100); indicators.ema200=jsEMA(c2,200);
+                  indicators.rsi14=jsRSI(c2,14); indicators.vwap=jsVWAP(ohlcv);
+                  indicators.bb=jsBB(c2,20,2);
+                  computeIntradayST();
+                  updatePriceTag(); updateInfoBar();
+                  drawAll();
+                }
+              }).catch(()=>{});
+          }, intradayInterval === "1" ? 3000 : 5000);
+        }
+      })
+      .catch(e=>{ loading.textContent="Error: "+e.message; });
+    return;
+  }
+
+  const periodLabel = {'1mo':'1 Month','3mo':'3 Months','6mo':'6 Months','1y':'1 Year','2y':'2 Years','5y':'5 Years','max':'Max History'}[period] || period;
+  loading.style.display="block";
+  loading.textContent = `Loading ${sym} — ${periodLabel}...`;
+
+  // Always use /api/indicators so overlays exist on every timeframe
+  // (server seeds short windows from 2y history, so lines span the full chart).
+  fetch(`${API}/api/indicators/${sym}?period=${period}&interval=1d`)
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.error){ loading.textContent=`No data for ${sym}: ${data.error}`; return; }
+      ohlcv = data.ohlcv || [];
+      indicators = data;
+      if(!ohlcv.length){ loading.textContent=`No data returned for ${sym}`; return; }
+      loading.style.display="none";
+      hideSkel(false);
+      updatePriceTag(); updateInfoBar();
+      drawAll();
+      if(window._marketOpen) startLiveUpdate(sym);
+    }).catch(e=>{ loading.textContent="Error: "+e.message; });
+}
+
+function hideSkel(hide){
+  document.getElementById("mainBox").style.display = hide?"none":"block";
+  syncSub();
+}
+function syncSub(){
+  document.getElementById("rsiBox").style.display  = (showInds.rsi  && indicators.rsi14) ? "block":"none";
+  document.getElementById("macdBox").style.display = (showInds.macd && indicators.macd) ? "block":"none";
+  document.getElementById("srsiBox").style.display = (showInds.srsi && indicators.stoch_rsi_k) ? "block":"none";
+  document.getElementById("sqzBox").style.display  = (showInds.sqz  && indicators.squeeze_hist) ? "block":"none";
+}
+
+function computeIntradayST(periodLen=7, mult=3.0){
+  if(!ohlcv.length) return;
+  const n = ohlcv.length;
+  const st  = new Array(n).fill(null);
+  const dir = new Array(n).fill(0);
+  const tr = [null];
+  for(let i=1;i<n;i++){
+    const hl = ohlcv[i].high - ohlcv[i].low;
+    const hc = Math.abs(ohlcv[i].high - ohlcv[i-1].close);
+    const lc = Math.abs(ohlcv[i].low  - ohlcv[i-1].close);
+    tr.push(Math.max(hl,hc,lc));
+  }
+  const atr = new Array(n).fill(null);
+  let atrVal = 0;
+  for(let i=1; i<=periodLen && i<n; i++) atrVal += tr[i];
+  atrVal /= periodLen;
+  atr[periodLen] = atrVal;
+  for(let i=periodLen+1;i<n;i++){ atrVal = (atrVal*(periodLen-1)+tr[i])/periodLen; atr[i] = atrVal; }
+  const ub = new Array(n).fill(null), lb = new Array(n).fill(null);
+  for(let i=periodLen;i<n;i++){
+    if(atr[i]==null) continue;
+    const mid = (ohlcv[i].high+ohlcv[i].low)/2;
+    ub[i] = mid + mult*atr[i];
+    lb[i] = mid - mult*atr[i];
+  }
+  for(let i=periodLen;i<n;i++){
+    if(ub[i]==null) continue;
+    if(i>periodLen){
+      if(ub[i-1]!=null) ub[i] = (ohlcv[i-1].close<=ub[i-1]) ? Math.min(ub[i],ub[i-1]) : ub[i];
+      if(lb[i-1]!=null) lb[i] = (ohlcv[i-1].close>=lb[i-1]) ? Math.max(lb[i],lb[i-1]) : lb[i];
+    }
+    if(i===periodLen){ st[i]=ub[i]; dir[i]=-1; }
+    else if(st[i-1]===ub[i-1]){
+      if(ohlcv[i].close > ub[i]){ st[i]=lb[i]; dir[i]=1; }
+      else { st[i]=ub[i]; dir[i]=-1; }
+    } else {
+      if(ohlcv[i].close < lb[i]){ st[i]=ub[i]; dir[i]=-1; }
+      else { st[i]=lb[i]; dir[i]=1; }
+    }
+  }
+  indicators.supertrend = st;
+  indicators.st_direction = dir;
+}
+
+function lastVal(a){ if(!a) return null; for(let i=a.length-1;i>=0;i--){ if(a[i]!=null && !isNaN(a[i])) return a[i]; } return null; }
+function fmtN(v, d=2){ return v==null?"—":Number(v).toLocaleString("en-IN",{minimumFractionDigits:d,maximumFractionDigits:d}); }
+
+function updatePriceTag(){
+  const last = ohlcv[ohlcv.length-1];
+  const prev = ohlcv[ohlcv.length-2];
+  if(!last) return;
+  const chg = prev ? ((last.close-prev.close)/prev.close*100) : 0;
+  document.getElementById("priceTag").textContent = `₹${last.close.toFixed(2)}`;
+  const ct = document.getElementById("chgTag");
+  ct.textContent = `${chg>=0?"+":""}${chg.toFixed(2)}%`;
+  ct.className = chg>=0?"up":"down";
+}
+
+function updateInfoBar(){
+  const bar = document.getElementById("infoBar");
+  const last = ohlcv[ohlcv.length-1];
+  if(!last){ bar.innerHTML = '<span style="color:#484F58">No data</span>'; return; }
+  const prev = ohlcv[ohlcv.length-2];
+  const chg = prev ? last.close-prev.close : 0;
+  const chgP = prev ? chg/prev.close*100 : 0;
+  const cc = chg>=0 ? C.up : C.down;
+  const tf = intradayMode ? (intradayInterval+"m") : period;
+  let h = `<span class="sym">${currentSym}</span><span class="tf">· ${tf} · NSE</span>`;
+  h += `<span class="ohlc">O <b style="color:${last.close>=last.open?C.up:C.down}">${fmtN(last.open)}</b> `
+     + `H <b style="color:${C.up}">${fmtN(last.high)}</b> `
+     + `L <b style="color:${C.down}">${fmtN(last.low)}</b> `
+     + `C <b style="color:${cc}">${fmtN(last.close)}</b> `
+     + `<b style="color:${cc}">${chg>=0?"+":""}${fmtN(chg)} (${chg>=0?"+":""}${chgP.toFixed(2)}%)</b></span>`;
+  h += `<span class="ohlc">Vol <b>${(last.volume||0).toLocaleString("en-IN")}</b></span>`;
+  const chip = (lbl,val,col)=> val==null?"":`<span class="iv"><span style="color:${col}">●</span> ${lbl} <b style="color:${col}">${fmtN(val)}</b></span>`;
+  if(showInds.ema20)  h += chip("EMA20", lastVal(indicators.ema20), C.ema20);
+  if(showInds.ema50)  h += chip("EMA50", lastVal(indicators.ema50), C.ema50);
+  if(showInds.ema100) h += chip("EMA100", lastVal(indicators.ema100), C.ema100);
+  if(showInds.ema200) h += chip("EMA200", lastVal(indicators.ema200), C.ema200);
+  if(showInds.bb && indicators.bb){
+    h += chip("BB↑", lastVal(indicators.bb[0]), C.dim);
+    h += chip("BB", lastVal(indicators.bb[1]), C.bb);
+    h += chip("BB↓", lastVal(indicators.bb[2]), C.dim);
+  }
+  if(showInds.vwap) h += chip("VWAP", lastVal(indicators.vwap), C.vwap);
+  if(showInds.rsi)  h += `<span class="iv">RSI <b>${fmtN(lastVal(indicators.rsi14),1)}</b></span>`;
+  bar.innerHTML = h;
+}
+
+function startLiveUpdate(sym){
+  liveInterval = setInterval(async ()=>{
+    try {
+      const r = await fetch(`${API}/api/candle/latest/${sym}`);
+      const d = await r.json();
+      if(!d.is_market){ clearInterval(liveInterval); liveInterval=null; window._marketOpen=false; return; }
+      if(!d.price || !ohlcv.length) return;
+      const lastBar = ohlcv[ohlcv.length-1];
+      lastBar.close = d.price;
+      if(d.day_high && d.day_high > lastBar.high) lastBar.high = d.day_high;
+      if(d.day_low  && d.day_low  < lastBar.low)  lastBar.low  = d.day_low;
+      updatePriceTag(); updateInfoBar();
+      const lbl = document.getElementById('marketLabel');
+      if(lbl) lbl.textContent = lbl.textContent.includes('●') ? 'Live' : '● Live';
+      drawAll();
+    } catch(e){}
+  }, 5000);
+}
+
+// ── canvas helpers ────────────────────────────────────────────────────────
+function fitCanvas(cv, w, h){
+  const dpr = window.devicePixelRatio||1;
+  cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  cv.style.width = w+"px"; cv.style.height = h+"px";
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+function niceStep(range, target){
+  const raw = range/target;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const n = raw/mag;
+  if(n>=5) return 10*mag; if(n>=2) return 5*mag; if(n>=1) return 2*mag;
+  return mag;
+}
+function drawLineArr(ctx, arr, xPos, yScale, color, lw=1.5){
+  ctx.strokeStyle=color; ctx.lineWidth=lw; ctx.lineJoin="round"; ctx.beginPath();
+  let started=false;
+  for(let i=0;i<arr.length;i++){
+    const v=arr[i];
+    if(v==null||isNaN(v)) continue;
+    const x=xPos(i), y=yScale(v);
+    if(!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y);
+  }
+  if(started) ctx.stroke();
+}
+
+function drawAll(){
+  const wrap = document.getElementById("chartWrap");
+  const W = wrap.clientWidth || 900;
+  syncSub();
+  drawMain(W);
+  if(showInds.rsi && indicators.rsi14) drawRSI(W);
+  if(showInds.macd && indicators.macd) drawMACD(W);
+  if(showInds.srsi && indicators.stoch_rsi_k) drawStochRSI(W);
+  if(showInds.sqz && indicators.squeeze_hist) drawSqueeze(W);
+  updateInfoBar();
+}
+
+function drawMain(W){
+  const canvas = document.getElementById("mainCanvas");
+  const H = Math.max(360, Math.min(560, Math.round(W*0.42)));
+  const ctx = fitCanvas(canvas, W, H);
+  ctx.fillStyle = C.bg; ctx.fillRect(0,0,W,H);
+  const n = ohlcv.length;
+  if(!n) return;
+
+  const AXW = 68, PADT = 10, PADB = 22, PADL = 6;
+  const plotW = W - PADL - AXW, plotH = H - PADT - PADB;
+  const volOn = showInds.vol;
+  const volH = volOn ? Math.round(plotH*0.16) : 0;
+
+  let yMin = Infinity, yMax = -Infinity;
+  for(const d of ohlcv){ if(d.low<yMin)yMin=d.low; if(d.high>yMax)yMax=d.high; }
+  const consider = (arr)=>{
+    if(!arr) return;
+    for(const v of arr){ if(v!=null&&!isNaN(v)){ if(v<yMin)yMin=v; if(v>yMax)yMax=v; } }
+  };
+  if(showInds.ema20) consider(indicators.ema20);
+  if(showInds.ema50) consider(indicators.ema50);
+  if(showInds.ema100) consider(indicators.ema100);
+  if(showInds.ema200) consider(indicators.ema200);
+  if(showInds.vwap) consider(indicators.vwap);
+  if(showInds.bb && indicators.bb){ consider(indicators.bb[0]); consider(indicators.bb[1]); consider(indicators.bb[2]); }
+  if(showInds.st && indicators.supertrend) consider(indicators.supertrend);
+  if(!(yMax>yMin)){ yMin-=1; yMax+=1; }
+  const pad = (yMax-yMin)*0.07; yMin-=pad; yMax+=pad;
+
+  const yScale = v => PADT + (yMax-v)/(yMax-yMin)*plotH;
+  const xPos = i => PADL + (i+0.5)*(plotW/n);
+
+  // grid + right price axis
+  const step = niceStep(yMax-yMin, 6);
+  ctx.font="10px sans-serif";
+  for(let g=Math.ceil(yMin/step)*step; g<=yMax; g+=step){
+    const y=Math.round(yScale(g))+0.5;
+    ctx.strokeStyle=C.gridSoft; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(PADL,y); ctx.lineTo(PADL+plotW,y); ctx.stroke();
+    ctx.fillStyle=C.dim; ctx.textAlign="left";
+    ctx.fillText(g.toLocaleString("en-IN",{maximumFractionDigits:2}), PADL+plotW+6, y+3);
+  }
+  // right axis spine
+  ctx.strokeStyle=C.grid; ctx.beginPath(); ctx.moveTo(PADL+plotW+0.5,PADT); ctx.lineTo(PADL+plotW+0.5,PADT+plotH); ctx.stroke();
+
+  // volume overlay (Zerodha style, bottom of price pane)
+  const cw = plotW/n, bw = Math.max(1, Math.min(18, cw*0.62));
+  if(volOn){
+    let mv=0; for(const d of ohlcv) if(d.volume>mv)mv=d.volume;
+    if(mv>0){
+      const vTop = PADT+plotH-volH;
+      ohlcv.forEach((d,i)=>{
+        const x=xPos(i);
+        const h=(d.volume/mv)*(volH-2);
+        ctx.fillStyle = d.close>=d.open ? C.volUp : C.volDn;
+        ctx.fillRect(x-bw/2, PADT+plotH-h, bw, h);
+      });
+      ctx.strokeStyle=C.gridSoft;
+      ctx.beginPath(); ctx.moveTo(PADL,vTop+0.5); ctx.lineTo(PADL+plotW,vTop+0.5); ctx.stroke();
+    }
+  }
+
+  // Bollinger fill first (under candles)
+  if(showInds.bb && indicators.bb && indicators.bb[0]){
+    const up=indicators.bb[0], mid=indicators.bb[1], lo=indicators.bb[2];
+    ctx.beginPath(); let s=true;
+    up.forEach((v,i)=>{ if(v==null)return; const x=xPos(i),y=yScale(v); s?(ctx.moveTo(x,y),s=false):ctx.lineTo(x,y); });
+    for(let i=lo.length-1;i>=0;i--){ const v=lo[i]; if(v==null)continue; ctx.lineTo(xPos(i),yScale(v)); }
+    ctx.closePath(); ctx.fillStyle="rgba(120,123,134,0.10)"; ctx.fill();
+    drawLineArr(ctx, up, xPos, yScale, C.bb, 1);
+    drawLineArr(ctx, mid, xPos, yScale, C.bb, 1);
+    drawLineArr(ctx, lo, xPos, yScale, C.bb, 1);
+  }
+
+  if(showInds.ema20 && indicators.ema20)   drawLineArr(ctx, indicators.ema20, xPos, yScale, C.ema20, 1.5);
+  if(showInds.ema50 && indicators.ema50)   drawLineArr(ctx, indicators.ema50, xPos, yScale, C.ema50, 1.5);
+  if(showInds.ema100 && indicators.ema100) drawLineArr(ctx, indicators.ema100, xPos, yScale, C.ema100, 1.5);
+  if(showInds.ema200 && indicators.ema200) drawLineArr(ctx, indicators.ema200, xPos, yScale, C.ema200, 1.5);
+  if(showInds.vwap && indicators.vwap)     drawLineArr(ctx, indicators.vwap, xPos, yScale, C.vwap, 1.5);
+
+  // Vol profile (left, thin)
+  if(showInds.vp){
+    const VP_W=44, BK=24, rng=yMax-yMin, bs=rng/BK, bks=new Array(BK).fill(0);
+    ohlcv.forEach(d=>{
+      const m=(d.high+d.low)/2;
+      const ix=Math.min(BK-1,Math.max(0,Math.floor((m-yMin)/bs)));
+      bks[ix]+=(d.volume||0);
+    });
+    const mb=Math.max(...bks,1), poc=bks.indexOf(mb);
+    const barH=plotH/BK;
+    bks.forEach((v,i)=>{
+      const w=(v/mb)*VP_W, y=PADT+(BK-1-i)*barH;
+      ctx.fillStyle = i===poc?'rgba(224,64,251,0.55)':'rgba(41,98,255,0.22)';
+      ctx.fillRect(PADL, y, w, Math.max(1,barH-1));
+    });
+    const pocP=yMin+(poc+0.5)*bs;
+    ctx.strokeStyle='#e040fb'; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(PADL,yScale(pocP)); ctx.lineTo(PADL+plotW,yScale(pocP)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Supertrend segments
+  if(showInds.st && indicators.supertrend && indicators.st_direction){
+    const st=indicators.supertrend, dir=indicators.st_direction;
+    ctx.lineWidth=2;
+    for(const want of [1,-1]){
+      ctx.strokeStyle = want===1?C.stUp:C.stDn;
+      ctx.beginPath(); let sg=false;
+      for(let i=0;i<st.length;i++){
+        if(st[i]==null||dir[i]!==want){ sg=false; continue; }
+        const x=xPos(i),y=yScale(st[i]);
+        sg?ctx.lineTo(x,y):(ctx.moveTo(x,y),sg=true);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // candles on top of overlays
+  ohlcv.forEach((d,i)=>{
+    const x=xPos(i);
+    const bull=d.close>=d.open;
+    ctx.strokeStyle=bull?C.up:C.down; ctx.lineWidth=Math.max(1,Math.min(2,cw*0.18));
+    ctx.beginPath(); ctx.moveTo(x,yScale(d.high)); ctx.lineTo(x,yScale(d.low)); ctx.stroke();
+    const y1=yScale(Math.max(d.open,d.close)), y2=yScale(Math.min(d.open,d.close));
+    ctx.fillStyle=bull?C.up:C.down;
+    ctx.fillRect(x-bw/2, y1, bw, Math.max(1,y2-y1));
+  });
+
+  // BUY/SELL signals
+  if(showInds.sig && indicators.st_direction){
+    const dir=indicators.st_direction;
+    ctx.textAlign="center";
+    for(let i=1;i<ohlcv.length;i++){
+      if(!dir[i]||!dir[i-1]||dir[i]===dir[i-1]) continue;
+      const x=xPos(i), d=ohlcv[i];
+      if(dir[i]===1){
+        const y=yScale(d.low)+12;
+        ctx.fillStyle=C.up;
+        ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-5,y+8); ctx.lineTo(x+5,y+8); ctx.closePath(); ctx.fill();
+      } else {
+        const y=yScale(d.high)-12;
+        ctx.fillStyle=C.down;
+        ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-5,y-8); ctx.lineTo(x+5,y-8); ctx.closePath(); ctx.fill();
+      }
+    }
+  }
+
+  // X axis dates
+  ctx.fillStyle=C.dim; ctx.font="10px sans-serif"; ctx.textAlign="center";
+  const perRow = Math.max(1, Math.floor(n/7));
+  const long = n>250;
+  for(let i=0;i<n;i+=perRow){
+    const dt=(ohlcv[i].date||"").slice(0,10);
+    ctx.fillText(long?dt.slice(0,7):dt.slice(5), xPos(i), PADT+plotH+15);
+  }
+
+  // last price line + tag
+  const last=ohlcv[n-1];
+  if(last){
+    const y=Math.round(yScale(last.close))+0.5;
+    const lc = n>1&&last.close>=ohlcv[n-2].close ? C.lastUp : C.lastDn;
+    ctx.strokeStyle=lc; ctx.setLineDash([4,4]); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(PADL,y); ctx.lineTo(PADL+plotW,y); ctx.stroke();
+    ctx.setLineDash([]);
+    const label=last.close.toFixed(2);
+    ctx.font="bold 10px sans-serif";
+    const tw=ctx.measureText(label).width+10;
+    ctx.fillStyle=lc;
+    const bx=PADL+plotW, by=y-9;
+    ctx.fillRect(bx, by, AXW-2, 18);
+    ctx.fillStyle="#fff"; ctx.textAlign="left";
+    ctx.fillText(label, bx+5, by+13);
+  }
+
+  // crosshair
+  if(hoverIdx>=0 && hoverIdx<n && hoverXY){
+    const i=hoverIdx, x=xPos(i);
+    ctx.strokeStyle="rgba(178,181,190,0.5)"; ctx.setLineDash([4,4]); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x,PADT); ctx.lineTo(x,PADT+plotH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(PADL,hoverXY.y); ctx.lineTo(PADL+plotW,hoverXY.y); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // legend (top-left, with live values)
+  const lg=[];
+  if(showInds.ema20) lg.push([C.ema20,"EMA20 "+fmtN(lastVal(indicators.ema20))]);
+  if(showInds.ema50) lg.push([C.ema50,"EMA50 "+fmtN(lastVal(indicators.ema50))]);
+  if(showInds.ema100) lg.push([C.ema100,"EMA100 "+fmtN(lastVal(indicators.ema100))]);
+  if(showInds.ema200) lg.push([C.ema200,"EMA200 "+fmtN(lastVal(indicators.ema200))]);
+  if(showInds.vwap) lg.push([C.vwap,"VWAP "+fmtN(lastVal(indicators.vwap))]);
+  let lx=PADL+8;
+  ctx.font="10px sans-serif"; ctx.textAlign="left";
+  lg.forEach(([c,t])=>{
+    ctx.fillStyle=c; ctx.fillRect(lx,PADT+4,12,3); lx+=15;
+    ctx.fillStyle=C.txt; ctx.fillText(t,lx,PADT+10); lx+=ctx.measureText(t).width+12;
+  });
+
+  canvas._geom = {PADL,AXW,PADT,PADH:plotH,PLOTW:plotW,n,xPos,yScale,yMin,yMax};
+}
+
+// crosshair + tooltip
+(function(){
+  const box = document.getElementById("mainBox");
+  const cv = document.getElementById("mainCanvas");
+  const tip = document.getElementById("tip");
+  cv.addEventListener("mousemove", e=>{
+    const g = cv._geom;
+    if(!g||!ohlcv.length){ return; }
+    const r = cv.getBoundingClientRect();
+    const mx = e.clientX-r.left, my = e.clientY-r.top;
+    const i = Math.floor((mx-g.PADL)/(g.PLOTW/g.n));
+    if(i<0||i>=g.n||my<g.PADT||my>g.PADT+g.PADH){ hoverIdx=-1; tip.style.display="none"; drawMain(r.width); return; }
+    hoverIdx=i; hoverXY={x:mx,y:my};
+    drawMain(r.width);
+    const d=ohlcv[i];
+    const gv=(a)=>a&&a[i]!=null?fmtN(a[i]):"—";
+    tip.innerHTML = `${(d.date||"").slice(0,16)}<br>O ${fmtN(d.open)} H ${fmtN(d.high)}<br>L ${fmtN(d.low)} C ${fmtN(d.close)}<br>`
+      + `<span style="color:${C.ema20}">EMA20 ${gv(indicators.ema20)}</span> <span style="color:${C.ema50}">EMA50 ${gv(indicators.ema50)}</span><br>`
+      + `<span style="color:${C.ema100}">EMA100 ${gv(indicators.ema100)}</span> <span style="color:${C.ema200}">EMA200 ${gv(indicators.ema200)}</span><br>`
+      + `<span style="color:${C.vwap}">VWAP ${gv(indicators.vwap)}</span>`;
+    tip.style.display="block";
+    tip.style.left = Math.min(mx+14, r.width-190)+"px";
+    tip.style.top = Math.max(4, my-20)+"px";
+  });
+  cv.addEventListener("mouseleave", ()=>{
+    hoverIdx=-1; hoverXY=null;
+    document.getElementById("tip").style.display="none";
+    if(ohlcv.length) drawMain(cv.getBoundingClientRect().width);
+  });
+})();
+
+function subFrame(id, W, H){
+  const cv=document.getElementById(id);
+  const ctx=fitCanvas(cv,W,H);
+  ctx.fillStyle=C.bg; ctx.fillRect(0,0,W,H);
+  return {cv,ctx,AXW:68,PADL:6,PADT:6,PADB:6,plotW:W-6-68,plotH:H-12};
+}
+function subAxisR(ctx,F,vMin,vMax,marks,fmt,mid){
+  const yS=v=>F.PADT+(vMax-v)/(vMax-vMin)*F.plotH;
+  ctx.font="9px sans-serif";
+  marks.forEach(m=>{
+    const y=Math.round(yS(m))+0.5;
+    ctx.strokeStyle = (mid!==undefined&&m===mid)?"rgba(120,123,134,0.8)":"rgba(46,52,64,0.45)";
+    ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(F.PADL,y); ctx.lineTo(F.PADL+F.plotW,y); ctx.stroke();
+    ctx.fillStyle=C.dim; ctx.textAlign="left";
+    ctx.fillText(fmt?fmt(m):m, F.PADL+F.plotW+6, y+3);
+  });
+  return yS;
+}
+
+function drawRSI(W){
+  const H=90, {ctx}=subFrame("rsiCanvas",W,H);
+  const F={PADL:6,AXW:68,PADT:6,PADB:6,plotW:W-6-68,plotH:H-12};
+  const rsi=indicators.rsi14; if(!rsi) return;
+  const yS=subAxisR(ctx,F,0,100,[30,50,70],v=>v,50);
+  const n=rsi.length, X=i=>F.PADL+(i+0.5)*(F.plotW/n);
+  const y70=yS(70), y30=yS(30);
+  ctx.fillStyle="rgba(239,83,80,0.08)"; ctx.fillRect(F.PADL,F.PADT,F.plotW,y70-F.PADT);
+  ctx.fillStyle="rgba(38,166,154,0.08)"; ctx.fillRect(F.PADL,y30,F.plotW,F.PADT+F.plotH-y30);
+  drawLineArr(ctx,rsi,X,yS,"#7e57c2",1.5);
+  const lv=lastVal(rsi);
+  if(lv!=null){
+    ctx.fillStyle=lv>70?C.down:lv<30?C.up:"#7e57c2";
+    ctx.font="bold 10px sans-serif"; ctx.textAlign="left";
+    ctx.fillText(lv.toFixed(1), F.PADL+F.plotW+6, F.PADT+12);
+  }
+}
+
+function drawMACD(W){
+  const H=90, {ctx}=subFrame("macdCanvas",W,H);
+  const F={PADL:6,AXW:68,PADT:6,PADB:6,plotW:W-6-68,plotH:H-12};
+  if(!indicators.macd) return;
+  const [ml,sl,hist]=indicators.macd;
+  const vals=[...ml,...sl,...hist].filter(v=>v!=null);
+  if(!vals.length) return;
+  let yMin=Math.min(...vals), yMax=Math.max(...vals);
+  if(yMax-yMin<1e-9){ yMin-=1; yMax+=1; }
+  const p=(yMax-yMin)*0.1; yMin-=p; yMax+=p;
+  const yS=subAxisR(ctx,F,yMin,yMax,[0],v=>v.toFixed(2));
+  const n=ml.length, X=i=>F.PADL+(i+0.5)*(F.plotW/n), bw2=Math.max(1,(F.plotW/n)*0.6);
+  const zero=yS(0);
+  hist.forEach((v,i)=>{
+    if(v==null) return;
+    const x=X(i), y=yS(v);
+    ctx.fillStyle=v>=0?C.volUp:C.volDn;
+    ctx.fillRect(x-bw2/2,Math.min(y,zero),bw2,Math.max(1,Math.abs(y-zero)));
+  });
+  drawLineArr(ctx,ml,X,yS,C.ema20,1.5);
+  drawLineArr(ctx,sl,X,yS,C.ema50,1);
+}
+
+function drawStochRSI(W){
+  const H=80, {ctx}=subFrame("srsiCanvas",W,H);
+  const F={PADL:6,AXW:68,PADT:6,PADB:6,plotW:W-6-68,plotH:H-12};
+  const k=indicators.stoch_rsi_k, d=indicators.stoch_rsi_d;
+  if(!k) return;
+  const yS=subAxisR(ctx,F,0,100,[20,50,80],v=>v,50);
+  const n=k.length, X=i=>F.PADL+(i+0.5)*(F.plotW/n);
+  const y80=yS(80), y20=yS(20);
+  ctx.fillStyle="rgba(239,83,80,0.08)"; ctx.fillRect(F.PADL,F.PADT,F.plotW,y80-F.PADT);
+  ctx.fillStyle="rgba(38,166,154,0.08)"; ctx.fillRect(F.PADL,y20,F.plotW,F.PADT+F.plotH-y20);
+  drawLineArr(ctx,k,X,yS,C.ema20,1.5);
+  if(d) drawLineArr(ctx,d,X,yS,C.ema50,1);
+}
+
+function drawSqueeze(W){
+  const H=80, {ctx}=subFrame("sqzCanvas",W,H);
+  const F={PADL:6,AXW:68,PADT:6,PADB:6,plotW:W-6-68,plotH:H-12};
+  const hist=indicators.squeeze_hist, sqDir=indicators.squeeze_dir;
+  if(!hist) return;
+  const vals=hist.filter(v=>v!=null);
+  if(!vals.length) return;
+  const am=Math.max(Math.abs(Math.min(...vals)),Math.abs(Math.max(...vals)),0.001);
+  const yS=v=>F.PADT+(am-v)/(am*2)*F.plotH;
+  const zero=yS(0);
+  ctx.strokeStyle=C.grid; ctx.beginPath(); ctx.moveTo(F.PADL,zero); ctx.lineTo(F.PADL+F.plotW,zero); ctx.stroke();
+  const n=hist.length, X=i=>F.PADL+(i+0.5)*(F.plotW/n), bw2=Math.max(1,(F.plotW/n)*0.6);
+  for(let i=1;i<n;i++){
+    const v=hist[i]; if(v==null) continue;
+    const prev=hist[i-1], x=X(i), y=yS(v);
+    ctx.fillStyle = v>=0 ? ((prev==null||v>=prev)?C.up:"#5a2a2a") : ((prev==null||v<=prev)?C.down:"#1e4a44");
+    ctx.fillRect(x-bw2/2,Math.min(y,zero),bw2,Math.max(1,Math.abs(y-zero)));
+  }
+  if(sqDir) sqDir.forEach((sq,i)=>{
+    if(hist[i]==null) return;
+    ctx.beginPath(); ctx.arc(X(i),zero,2,0,Math.PI*2);
+    ctx.fillStyle=sq===1?'#f23645':'#484F58'; ctx.fill();
+  });
+}
+
+window.addEventListener("resize", ()=>{ if(ohlcv.length) drawAll(); });
+</script>
+</body>
+</html>

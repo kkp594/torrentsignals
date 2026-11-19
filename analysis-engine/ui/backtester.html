@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backtester — StockIQ</title>
+<link rel="stylesheet" href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 20px;display:flex;align-items:center;gap:20px;height:52px;flex-wrap:wrap}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:12px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent;text-decoration:none;white-space:nowrap}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.page{max-width:1300px;margin:0 auto;padding:20px;display:grid;grid-template-columns:300px 1fr;gap:14px;align-items:start}
+.page-full{max-width:1300px;margin:0 auto;padding:0 20px 20px}
+.card{background:#161B22;border:1px solid #30363D;border-radius:8px;padding:16px;margin-bottom:14px}
+.card h3{font-size:11px;color:#8B949E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:11px;color:#8B949E;margin-bottom:4px}
+.field input,.field select{width:100%;background:#0D1117;border:1px solid #30363D;border-radius:6px;padding:7px 10px;color:#E6EDF3;font-size:13px;outline:none}
+.field input:focus,.field select:focus{border-color:#58A6FF}
+.btn{border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600}
+.btn-green{background:#238636;color:#fff}.btn-green:hover{background:#2ea043}
+.btn-ghost{background:#21262D;border:1px solid #30363D;color:#8B949E}.btn-ghost:hover{background:#30363D;color:#E6EDF3}
+.preset-btn{background:#21262D;border:1px solid #30363D;border-radius:5px;padding:5px 10px;color:#8B949E;cursor:pointer;font-size:11px;width:100%;text-align:left;margin-bottom:5px}
+.preset-btn:hover,.preset-btn.active{border-color:#58A6FF;color:#58A6FF;background:#1C2128}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#21262D;padding:7px 10px;text-align:left;color:#8B949E;font-weight:600;border-bottom:1px solid #30363D;white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid #21262D;white-space:nowrap}
+tr:hover td{background:#1C2128}
+.up{color:#3FB950}.down{color:#F85149}.neutral{color:#8B949E}
+.kv{background:#0D1117;border-radius:6px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.kv .lbl{font-size:11px;color:#8B949E}
+.kv .val{font-size:14px;font-weight:700}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid #30363D;border-top-color:#58A6FF;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.equity-bar{height:8px;border-radius:4px;background:linear-gradient(90deg,#3FB950,#E3B341);transition:width .5s}
+.tabs{display:flex;border-bottom:1px solid #30363D;margin-bottom:14px}
+.tab{padding:7px 14px;cursor:pointer;color:#8B949E;font-size:12px;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:#58A6FF;border-bottom-color:#58A6FF}
+.tc{display:none}.tc.active{display:block}
+</style>
+</head>
+<body>
+<nav>
+  <span class="logo"><img src="img/logo.png"/> StockIQ</span>
+  <a href="/">Hub<!-- Dashboard --></a>
+  <a href="/screener.html">Scan<!-- Screener --></a>
+  <a href="/tips.html"><!-- 💡 -->Tips<!-- Tips --></a>
+  <a href="/chart.html">Chart<!-- Charts --></a>
+  <a href="/options.html">Opts<!-- Options --></a>
+  <a href="/heatmap.html">Map<!-- Heatmap --></a>
+  <a href="/alerts.html"><!-- 🔔 --> Alert<!-- Alters --></a>
+  <a href="/intel.html"><!-- 🧠 --> Algo<!-- Logic --></a>
+  <a href="/gap-scanner.html"><!-- 📈 --> Gap<!-- Gaps --></a>
+  <a href="/backtester.html" class="active"><!-- 🧪 --> Test<!-- Backtest --></a>
+  <a href="/briefing.html"><!-- 📋 --> Brief<!-- Briefing --></a>
+  <a href="/corp-actions.html">Corp</a>
+  <a href="/notes.html">Log<!-- Notes --></a>
+  <a href="/settings.html" style="margin-left:auto">⚙ Settings</a>
+</nav>
+
+<div class="page">
+  <!-- LEFT: Config panel -->
+  <div>
+    <div class="card">
+      <h3>Strategy Setup</h3>
+      <div class="field">
+        <label>Universe</label>
+        <select id="bt_universe">
+          <option value="N50">Nifty 50</option>
+          <option value="ALL">All Symbols (~100)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Lookback Period</label>
+        <select id="bt_period">
+          <option value="1y">1 Year</option>
+          <option value="2y" selected>2 Years</option>
+          <option value="6mo">6 Months</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Hold Days (buy open → sell close after N days)</label>
+        <input type="number" id="bt_hold" value="5" min="1" max="30">
+      </div>
+      <button class="btn btn-green" style="width:100%;margin-top:4px" onclick="runBacktest()">▶ Run Backtest</button>
+      <div id="bt_status" style="margin-top:8px;font-size:12px;color:#8B949E;min-height:18px"></div>
+    </div>
+
+    <div class="card">
+      <h3>Preset Strategies</h3>
+      <button class="preset-btn active" id="pbtn-oversold_rsi" onclick="selectPreset('oversold_rsi',this)">RSI Oversold (&lt;30)</button>
+      <button class="preset-btn" id="pbtn-macd_crossover" onclick="selectPreset('macd_crossover',this)">MACD Bullish Crossover</button>
+      <button class="preset-btn" id="pbtn-golden_cross" onclick="selectPreset('golden_cross',this)">Golden Cross (EMA20&gt;50)</button>
+      <button class="preset-btn" id="pbtn-bb_squeeze" onclick="selectPreset('bb_squeeze',this)">Bollinger Band Squeeze</button>
+      <button class="preset-btn" id="pbtn-near_52w_low" onclick="selectPreset('near_52w_low',this)">Near 52W Low</button>
+      <button class="preset-btn" id="pbtn-volume_spike" onclick="selectPreset('volume_spike',this)">Volume Spike (&gt;2×)</button>
+      <button class="preset-btn" id="pbtn-strong_buy" onclick="selectPreset('strong_buy',this)">Strong Buy Score&gt;70</button>
+      <button class="preset-btn" id="pbtn-swing_trading" onclick="selectPreset('swing_trading',this)">Swing Trading Setup</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: Results -->
+  <div>
+    <div id="summaryCard" class="card" style="display:none">
+      <h3 id="summaryTitle">Backtest Results</h3>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px" id="summaryGrid"></div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchBtTab('symbols')">By Symbol</div>
+        <div class="tab" onclick="switchBtTab('trades')">All Trades</div>
+        <div class="tab" onclick="switchBtTab('equity')">Equity Curve</div>
+      </div>
+
+      <div class="tc active" id="btc-symbols">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <div style="font-size:11px;color:#3FB950;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Top Performers</div>
+            <div id="topSymbols"></div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#F85149;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Worst Performers</div>
+            <div id="botSymbols"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tc" id="btc-trades">
+        <div style="margin-bottom:8px;display:flex;gap:8px">
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="filterTrades('ALL')">All</button>
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;color:#3FB950" onclick="filterTrades('WIN')">Wins</button>
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;color:#F85149" onclick="filterTrades('LOSS')">Losses</button>
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="exportTrades()">Export CSV</button>
+        </div>
+        <div id="tradesTable" style="max-height:420px;overflow-y:auto"></div>
+      </div>
+
+      <div class="tc" id="btc-equity">
+        <canvas id="equityCanvas" style="width:100%;background:#0D1117;border-radius:6px"></canvas>
+        <div style="font-size:11px;color:#8B949E;margin-top:8px">Cumulative return assuming equal position size on each signal.</div>
+      </div>
+    </div>
+
+    <div id="bt_placeholder" class="card">
+      <h3>🧪 Strategy Backtester</h3>
+      <div style="color:#8B949E;font-size:13px;line-height:1.8;padding:12px 0">
+        <p>Test any screener strategy on historical data to see if it actually works.</p>
+        <br>
+        <p><b>How it works:</b></p>
+        <p>1. Pick a preset strategy (or use current screener filters)</p>
+        <p>2. For each day in history, runs the screener</p>
+        <p>3. Simulates: <b>buy at next open</b>, hold N days, <b>sell at close</b></p>
+        <p>4. Shows win rate, avg return, best/worst symbols</p>
+        <br>
+        <p style="color:#484F58;font-size:11px">Uses cached yfinance data. First run downloads ~50 symbols and may take 60-90s.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "";
+let _preset   = "oversold_rsi";
+let _trades   = [];
+let _allTrades = [];
+
+function selectPreset(key, btn){
+  _preset = key;
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+}
+
+async function runBacktest(){
+  const universe = document.getElementById('bt_universe').value;
+  const period   = document.getElementById('bt_period').value;
+  const hold     = parseInt(document.getElementById('bt_hold').value)||5;
+  const status   = document.getElementById('bt_status');
+
+  status.innerHTML = '<span class="spinner"></span>Running backtest — may take 60-90s on first run...';
+  document.getElementById('bt_placeholder').style.display = 'none';
+  document.getElementById('summaryCard').style.display = 'none';
+
+  try{
+    const r = await fetch(`${API}/api/backtest`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({preset: _preset, universe, period, hold_days: hold})
+    });
+    const d = await r.json();
+    if(d.error){ status.textContent='Error: '+d.error; return; }
+    status.textContent = `✓ Done — ${d.summary.total_trades} trades analysed`;
+    _allTrades = d.trades || [];
+    renderResults(d);
+  }catch(e){
+    status.textContent = 'Error: '+e.message;
+    document.getElementById('bt_placeholder').style.display = 'block';
+  }
+}
+
+function renderResults(d){
+  const s = d.summary;
+  document.getElementById('summaryCard').style.display = 'block';
+  document.getElementById('summaryTitle').textContent =
+    `Backtest: ${_preset.replace(/_/g,' ')} | ${s.period} | Hold ${s.hold_days}d | ${s.universe}`;
+
+  const wrColor = s.win_rate >= 55 ? '#3FB950' : s.win_rate >= 45 ? '#E3B341' : '#F85149';
+  const avColor = s.avg_return >= 0 ? '#3FB950' : '#F85149';
+
+  document.getElementById('summaryGrid').innerHTML = `
+    <div class="kv"><span class="lbl">Total Trades</span><span class="val">${s.total_trades}</span></div>
+    <div class="kv"><span class="lbl">Win Rate</span><span class="val" style="color:${wrColor}">${s.win_rate}%</span></div>
+    <div class="kv"><span class="lbl">Avg Return</span><span class="val" style="color:${avColor}">${s.avg_return>0?'+':''}${s.avg_return}%</span></div>
+    <div class="kv"><span class="lbl">Max Win / Loss</span><span class="val"><span class="up">+${s.max_win}%</span> / <span class="down">${s.max_loss}%</span></span></div>
+    <div class="kv"><span class="lbl">Wins / Losses</span><span class="val"><span class="up">${s.wins}</span> / <span class="down">${s.losses}</span></span></div>
+    <div class="kv"><span class="lbl">Hold Period</span><span class="val">${s.hold_days} days</span></div>
+    <div class="kv"><span class="lbl">Universe</span><span class="val">${s.universe}</span></div>
+    <div class="kv"><span class="lbl">Period</span><span class="val">${s.period}</span></div>`;
+
+  // Top/bot symbols
+  const symRow = (s,isTop) => `
+    <div class="kv" style="margin-bottom:5px">
+      <span style="font-weight:600;color:#58A6FF;cursor:pointer" onclick="window.open('/chart.html?symbol=${s.symbol}','_blank')">${s.symbol}</span>
+      <span>
+        <span class="${isTop?'up':'down'}" style="font-weight:700">${s.avg_ret>0?'+':''}${s.avg_ret}%</span>
+        <span style="font-size:10px;color:#8B949E;margin-left:6px">${s.trades} trades</span>
+      </span>
+    </div>`;
+  document.getElementById('topSymbols').innerHTML = (d.top_symbols||[]).map(s=>symRow(s,true)).join('');
+  document.getElementById('botSymbols').innerHTML = (d.bot_symbols||[]).map(s=>symRow(s,false)).join('');
+
+  filterTrades('ALL');
+  drawEquityCurve(d.trades);
+}
+
+function filterTrades(filter){
+  _trades = filter==='ALL' ? _allTrades : _allTrades.filter(t=>t.result===filter);
+  const wrap = document.getElementById('tradesTable');
+  if(!_trades.length){ wrap.innerHTML='<div style="color:#8B949E;padding:16px">No trades</div>'; return; }
+  wrap.innerHTML = `<table>
+    <thead><tr><th>#</th><th>Symbol</th><th>Entry Date</th><th>Exit Date</th><th>Buy</th><th>Sell</th><th>Return</th><th>Result</th></tr></thead>
+    <tbody>${_trades.slice(0,200).map((t,i)=>`<tr>
+      <td style="color:#8B949E">${i+1}</td>
+      <td><span style="color:#58A6FF;cursor:pointer" onclick="window.open('/chart.html?symbol=${t.symbol}','_blank')">${t.symbol}</span></td>
+      <td style="color:#8B949E">${t.entry_date}</td>
+      <td style="color:#8B949E">${t.exit_date}</td>
+      <td>₹${t.buy_price}</td>
+      <td>₹${t.sell_price}</td>
+      <td class="${t.return_pct>=0?'up':'down'}" style="font-weight:700">${t.return_pct>0?'+':''}${t.return_pct}%</td>
+      <td><span style="padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600;background:${t.result==='WIN'?'#1A3A2A':'#3A1A1A'};color:${t.result==='WIN'?'#3FB950':'#F85149'}">${t.result}</span></td>
+    </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function drawEquityCurve(trades){
+  const canvas = document.getElementById('equityCanvas');
+  const W = canvas.parentElement.clientWidth || 800;
+  const H = 180;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0D1117'; ctx.fillRect(0,0,W,H);
+  if(!trades || !trades.length) return;
+
+  // Sort by entry date
+  const sorted = [...trades].sort((a,b)=>a.entry_date.localeCompare(b.entry_date));
+  let cum = 0;
+  const equity = [0];
+  sorted.forEach(t=>{ cum += t.return_pct; equity.push(cum); });
+
+  const minE = Math.min(...equity), maxE = Math.max(...equity);
+  const range = Math.max(maxE - minE, 1);
+  const PAD = {l:45,r:10,t:10,b:20};
+  const n = equity.length;
+  const xStep = (W-PAD.l-PAD.r) / Math.max(n-1,1);
+  const yScale = v => PAD.t + (maxE - v) / range * (H-PAD.t-PAD.b);
+  const xPos   = i => PAD.l + i * xStep;
+
+  // Zero line
+  ctx.strokeStyle='#30363D'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(PAD.l, yScale(0)); ctx.lineTo(W-PAD.r, yScale(0)); ctx.stroke();
+
+  // Fill
+  ctx.beginPath(); ctx.moveTo(xPos(0), yScale(equity[0]));
+  equity.forEach((v,i)=>{ if(i>0) ctx.lineTo(xPos(i), yScale(v)); });
+  ctx.lineTo(xPos(n-1), H-PAD.b); ctx.lineTo(PAD.l, H-PAD.b); ctx.closePath();
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  const finalVal = equity[equity.length-1];
+  grad.addColorStop(0, finalVal>=0?'rgba(63,185,80,0.3)':'rgba(248,81,73,0.3)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Line
+  ctx.strokeStyle = finalVal>=0?'#3FB950':'#F85149'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(xPos(0), yScale(equity[0]));
+  equity.forEach((v,i)=>{ if(i>0) ctx.lineTo(xPos(i), yScale(v)); });
+  ctx.stroke();
+
+  // Y axis labels
+  ctx.fillStyle='#8B949E'; ctx.font='9px sans-serif'; ctx.textAlign='right';
+  [minE, 0, maxE].forEach(v=>{
+    ctx.fillText((v>0?'+':'')+v.toFixed(1)+'%', PAD.l-4, yScale(v)+3);
+  });
+
+  // Final value
+  ctx.fillStyle = finalVal>=0?'#3FB950':'#F85149'; ctx.font='bold 11px sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText((finalVal>0?'+':'')+finalVal.toFixed(1)+'% cumulative', PAD.l+4, PAD.t+14);
+}
+
+function switchBtTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active',['symbols','trades','equity'][i]===name);
+  });
+  document.querySelectorAll('.tc').forEach(t=>t.classList.remove('active'));
+  document.getElementById(`btc-${name}`).classList.add('active');
+  if(name==='equity') drawEquityCurve(_allTrades);
+}
+
+function exportTrades(){
+  if(!_trades.length) return;
+  const cols = ['symbol','entry_date','exit_date','buy_price','sell_price','return_pct','result'];
+  const csv = [cols.join(','),..._trades.map(t=>cols.map(c=>t[c]??'').join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download = `backtest_${_preset}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+</script>
+</body>
+</html>

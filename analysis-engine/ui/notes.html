@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guide &amp; Notes — StockIQ</title>
+<link rel="stylesheet" href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#30363D;border-radius:4px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 20px;display:flex;align-items:center;gap:20px;height:52px}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:16px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent;text-decoration:none;white-space:nowrap}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.layout{display:flex;height:calc(100vh - 52px);overflow:hidden}
+/* SIDEBAR */
+.sidebar{width:230px;flex-shrink:0;background:#161B22;border-right:1px solid #30363D;display:flex;flex-direction:column;overflow:hidden}
+.sb-head{padding:14px 16px 10px;border-bottom:1px solid #30363D}
+.sb-head h2{font-size:13px;font-weight:700;color:#E6EDF3}
+.sb-head p{font-size:11px;color:#8B949E;margin-top:3px}
+.sb-search{padding:8px 10px;border-bottom:1px solid #30363D}
+.sb-search input{width:100%;background:#0D1117;border:1px solid #30363D;border-radius:5px;padding:5px 10px;color:#E6EDF3;font-size:12px;outline:none}
+.sb-search input:focus{border-color:#58A6FF}
+.sb-nav{flex:1;overflow-y:auto;padding:6px 0}
+.sb-sec-hdr{padding:8px 14px 4px;font-size:10px;color:#484F58;text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.sb-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;font-size:12px;color:#8B949E;border-left:2px solid transparent;user-select:none}
+.sb-item:hover{background:#1C2128;color:#E6EDF3}
+.sb-item.active{background:#1C2128;color:#58A6FF;border-left-color:#58A6FF;font-weight:600}
+.sb-item .ic{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+/* MAIN */
+.main{flex:1;overflow-y:auto;background:#0D1117}
+.cwrap{max-width:860px;margin:0 auto;padding:24px 28px 60px}
+/* HERO */
+.hero{background:linear-gradient(135deg,#161B22,#1C2128);border:1px solid #30363D;border-radius:10px;padding:20px 24px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start}
+.hero .h-icon{font-size:34px;flex-shrink:0;line-height:1}
+.hero h1{font-size:19px;font-weight:700;color:#E6EDF3;margin-bottom:4px}
+.hero p{font-size:13px;color:#8B949E;line-height:1.6}
+.hero .htags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.htag{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
+.tb{background:#0C2340;color:#58A6FF;border:1px solid #1F3D5A}
+.tg{background:#0A2A14;color:#3FB950;border:1px solid #1A4A28}
+.to{background:#2A1A08;color:#F0883E;border:1px solid #4A3018}
+.tp{background:#1A0A2A;color:#C397F8;border:1px solid #3A1A4A}
+.ty{background:#2A2208;color:#E3B341;border:1px solid #4A3A18}
+/* CARD */
+.sc{background:#161B22;border:1px solid #30363D;border-radius:8px;margin-bottom:14px;overflow:hidden}
+.sc-h{padding:11px 16px;border-bottom:1px solid #21262D;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.sc-h:hover{background:#1C2128}
+.sc-h .sic{font-size:15px;width:20px;text-align:center}
+.sc-h h3{font-size:13px;font-weight:600;color:#E6EDF3;flex:1}
+.sc-h .arr{color:#8B949E;font-size:11px;transition:transform .2s}
+.sc-h.open .arr{transform:rotate(90deg)}
+.sc-b{padding:14px 16px;display:none}
+.sc-b.open{display:block}
+/* STEPS */
+.steps{display:flex;flex-direction:column;gap:10px}
+.step{display:flex;gap:12px;align-items:flex-start}
+.sn{width:22px;height:22px;border-radius:50%;background:#1F6FEB;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step p{font-size:12px;color:#C9D1D9;line-height:1.7}
+.step p strong{color:#E6EDF3}
+/* TABLE */
+.t{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.t th{padding:6px 10px;text-align:left;color:#8B949E;font-weight:600;background:#0D1117;border-bottom:1px solid #21262D;font-size:11px}
+.t td{padding:7px 10px;border-bottom:1px solid #21262D;color:#C9D1D9;vertical-align:top}
+.t tr:last-child td{border-bottom:none}
+.t td:first-child{color:#E6EDF3;font-weight:600;white-space:nowrap}
+.t tr:hover td{background:#1C2128}
+/* TIP/WARN */
+.tip{background:#0A1929;border:1px solid #1F3D5A;border-radius:6px;padding:10px 14px;margin:10px 0;font-size:12px;color:#7AB8F5;line-height:1.7}
+.tip b{color:#58A6FF;display:block;margin-bottom:3px}
+.warn{background:#1E1509;border:1px solid #4A3018;border-radius:6px;padding:10px 14px;margin:10px 0;font-size:12px;color:#E3B341;line-height:1.7}
+.warn b{display:block;margin-bottom:3px}
+/* PILLS */
+.pills{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
+.pill{background:#21262D;border:1px solid #30363D;border-radius:16px;padding:4px 12px;font-size:11px;color:#8B949E;cursor:pointer}
+.pill.on{background:#1C2128;border-color:#58A6FF;color:#58A6FF}
+.pc{display:none}.pc.on{display:block}
+.pc p{font-size:12px;color:#C9D1D9;line-height:1.7}
+/* CODE */
+code{background:#161B22;border:1px solid #30363D;border-radius:3px;padding:1px 6px;font-size:11px;color:#79C0FF;font-family:'Cascadia Code',monospace}
+</style>
+</head>
+<body>
+<nav>
+  <span class="logo"><img src="img/logo.png"/> StockIQ</span>
+  <a href="/">Hub</a><a href="/screener.html">Scan</a><a href="/tips.html">Tips</a>
+  <a href="/chart.html">Chart</a><a href="/options.html">Opts</a><a href="/heatmap.html">Map</a>
+  <a href="/alerts.html">Alert</a><a href="/intel.html">Algo</a><a href="/gap-scanner.html">Gap</a>
+  <a href="/backtester.html">Test</a><a href="/briefing.html">Brief</a>
+  <a href="/corp-actions.html">Corp</a>
+  <a href="/notes.html" class="active">Log</a>
+  <a href="/premium.html" style="color:#E3B341">⭐ Premium</a>
+  <a href="/settings.html" style="margin-left:auto">&#9881; Settings</a>
+</nav>
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-head"><h2>&#128218; Guide &amp; Notes</h2><p>Learn every page of StockIQ</p></div>
+    <div class="sb-search"><input id="sbQ" placeholder="Search topics..." oninput="filterNav(this.value)"/></div>
+    <div class="sb-nav" id="sbNav"></div>
+  </div>
+  <div class="main"><div class="cwrap" id="cw"><div style="color:#8B949E;padding:60px;text-align:center">Loading...</div></div></div>
+</div>
+<script>
+// ── single <script> block — no cross-tag variable references ──
+var ALL_GUIDE = [];
+
+// helper: small HTML builders used inside block bodies
+function steps(arr){
+  return '<div class="steps">' + arr.map(function(s,i){
+    return '<div class="step"><div class="sn">'+(i+1)+'</div><p>'+s+'</p></div>';
+  }).join('') + '</div>';
+}
+function tbl(heads, rows){
+  var h = heads.map(function(x){return '<th>'+x+'</th>';}).join('');
+  var r = rows.map(function(row){
+    return '<tr>'+row.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';
+  }).join('');
+  return '<table class="t"><thead><tr>'+h+'</tr></thead><tbody>'+r+'</tbody></table>';
+}
+function tip(hdr,body){ return '<div class="tip"><b>'+hdr+'</b>'+body+'</div>'; }
+function warn(hdr,body){ return '<div class="warn"><b>'+hdr+'</b>'+body+'</div>'; }
+function pillBlock(pills, contents){
+  var ph = pills.map(function(p,i){
+    return '<span class="pill'+(i===0?' on':'')+'" onclick="spill(this)">'+p+'</span>';
+  }).join('');
+  var ch = contents.map(function(c,i){
+    return '<div class="pc'+(i===0?' on':'')+'">'+c+'</div>';
+  }).join('');
+  return '<div class="pills">'+ph+'</div>'+ch;
+}
+
+// ── GUIDE DATA ─────────────────────────────────────────────────
+ALL_GUIDE = [
+{
+  id:'getting-started', label:'Getting Started', icon:'🚀', section:'Overview',
+  tags:['startup','server','token','beginner'],
+  hero:{icon:'🚀', title:'Getting Started',
+    desc:'Start the server, get your Upstox token, and understand live vs off-market modes.',
+    tags:[['Beginner','tg'],['Setup','tb']]},
+  blocks:[
+    {title:'Start the Server', icon:'⚙️', body: function(){
+      return steps([
+        'Open a terminal in <code>D:\\sApp\\analysis</code>',
+        'Run <code>python server.py</code> — server starts on <strong>http://localhost:5001</strong>',
+        'Open your browser at <strong>http://localhost:5001</strong>',
+        'Keep the terminal open while using the app. Closing it stops all data.'
+      ]) + tip('💡 Tip','You don\'t need to restart the server every day — only when you change code.');
+    }},
+    {title:'Daily Upstox Token', icon:'🔑', body: function(){
+      return steps([
+        'Go to <strong>https://developer.upstox.com</strong> and log in',
+        'Generate your daily access token (expires at midnight IST)',
+        'In StockIQ open <strong>Settings → Upstox tab</strong> → paste token → Save',
+        'The green dot in the nav confirms the token is active'
+      ]) + warn('⚠️ Important','Without a valid token all prices fall back to yfinance (15-min delayed). Paste a fresh token each morning.');
+    }},
+    {title:'Live vs Off-Market', icon:'📡', body: function(){
+      return tbl(['Mode','When','Source','Refresh Rate'],[
+        ['🟢 NSE Live','Mon–Fri 9:15–15:30 IST','Upstox REST + WebSocket','Sub-second'],
+        ['🟡 MCX Live','Mon–Fri 9:00–23:30 IST','Upstox REST','1.5 s'],
+        ['⚪ Off-Market','All other times','yfinance (delayed)','On demand / 3 s']
+      ]) + tip('💡 Note','Commodity prices (Gold, Crude, Silver) keep updating off-hours via yfinance global futures — converted to INR automatically.');
+    }}
+  ]
+},
+
+{
+  id:'dashboard', label:'Dashboard (Hub)', icon:'🏠', section:'Pages',
+  tags:['hub','dashboard','watchlist','signals','quote'],
+  hero:{icon:'🏠', title:'Dashboard — Hub',
+    desc:'The main page. Live watchlist, quote panel, technical signals, indicators, fundamentals and resistance levels for any symbol.',
+    tags:[['Live Prices','tg'],['Signals','tb'],['Fundamentals','tp']]},
+  blocks:[
+    {title:'Page Layout', icon:'📐', body: function(){
+      return tbl(['Area','What It Does'],[
+        ['Left Sidebar','Watchlist — full symbol list with live prices. Filter: All / Stocks / Commodities / Indices'],
+        ['Search Bar','Type any NSE / BSE / MCX symbol and press Enter or click Analyze'],
+        ['Quote Panel','Current price, day H/L, 52-week range, market cap, volume'],
+        ['Analysis Tabs','Signals · Indicators · Fundamentals · Resistance · Suggest'],
+        ['Live Snapshot','Bottom strip — Nifty, BankNifty, Sensex, Gold, Silver, Crude updating live'],
+        ['Right Panel','Quick Screens (preset screener shortcuts) + Alert notifications']
+      ]);
+    }},
+    {title:'Analysis Tabs', icon:'🔍', body: function(){
+      return pillBlock(
+        ['Signals','Indicators','Fundamentals','Resistance','Suggest'],
+        [
+          '<p>Overall <strong>score 0–100</strong> from all indicators. ≥70 Strong Buy · 55–69 Buy · 45–54 Neutral · 30–44 Sell · &lt;30 Strong Sell. Each signal listed with its current value.</p>',
+          '<p>Raw numbers for every indicator: EMA 20/50/200, RSI, MACD, Bollinger Bands, ATR, ADX, VWAP, Stochastic, OBV, Supertrend — color-coded green/red.</p>',
+          '<p>Company fundamentals: P/E, P/B, ROE, EPS, D/E ratio, Revenue, Profit Margin, Dividend Yield, Sector. Only for stocks — indices/commodities show minimal data.</p>',
+          '<p>Computed resistance and support levels from recent price pivots, highs/lows and Fibonacci retracements. Resistance = price ceiling, Support = price floor.</p>',
+          '<p>Written analysis combining all signals into a single narrative — what the chart shows, key levels, suggested action. Good first read before deciding.</p>'
+        ]
+      );
+    }}
+  ]
+},
+
+{
+  id:'chart', label:'Chart', icon:'📈', section:'Pages',
+  tags:['chart','candle','supertrend','ema','macd','rsi','bollinger'],
+  hero:{icon:'📈', title:'Chart Page',
+    desc:'Interactive candlestick chart with technical overlays. Supertrend, EMA ribbons, MACD, RSI, Bollinger Bands — all on one canvas.',
+    tags:[['Candlestick','tb'],['Indicators','tp'],['Supertrend','tg']]},
+  blocks:[
+    {title:'How to Use', icon:'🕹️', body: function(){
+      return steps([
+        'Type a symbol in the top bar (e.g. <code>RELIANCE</code>, <code>GOLD</code>)',
+        'Select timeframe: 3M · 6M · 1Y · 2Y',
+        'Toggle overlays: EMA · Supertrend · BB · MACD · RSI',
+        'Hover candles to see OHLCV values. Supertrend changes color on trend flip.'
+      ]);
+    }},
+    {title:'Indicator Reference', icon:'📊', body: function(){
+      return tbl(['Indicator','What It Tells You','Key Levels'],[
+        ['EMA 20','Short-term trend / momentum','Price above = bullish, below = bearish'],
+        ['EMA 50','Medium-term trend','Golden cross (EMA20 > EMA50) = buy signal'],
+        ['EMA 200','Long-term trend direction','Price above = bull market'],
+        ['Supertrend','ATR-based dynamic trend line','Green = uptrend · Red = downtrend · Flip = reversal signal'],
+        ['Bollinger Bands','Volatility envelope ±2σ from EMA20','Near upper = overbought · near lower = oversold'],
+        ['RSI (14)','Momentum oscillator 0–100','&gt;70 overbought · &lt;30 oversold · 50 = neutral'],
+        ['MACD','Trend + momentum (12/26/9 EMA)','Signal line crossover = buy/sell · zero line = bias'],
+        ['ATR (14)','Average daily price range = volatility','High ATR = volatile, use wider stops']
+      ]);
+    }}
+  ]
+},
+{
+  id:'screener', label:'Screener (Scan)', icon:'🔎', section:'Pages',
+  tags:['screener','scan','filter','preset','rsi','golden cross'],
+  hero:{icon:'🔎', title:'Screener — Scan',
+    desc:'Filter the entire stock universe by technical conditions. RSI oversold, golden cross, Supertrend buy, near 52W high — results stream in live.',
+    tags:[['Filter','tb'],['Technical','tp'],['Batch Scan','to']]},
+  blocks:[
+    {title:'Built-in Preset Screens', icon:'📋', body: function(){
+      return tbl(['Preset','Condition','Best Used For'],[
+        ['RSI Oversold','RSI &lt; 35','Potential bounce candidates'],
+        ['RSI Overbought','RSI &gt; 70','Stocks to avoid / short ideas'],
+        ['Golden Cross','EMA20 crossed above EMA50','Momentum breakout longs'],
+        ['Death Cross','EMA20 crossed below EMA50','Trend reversal — exit / shorts'],
+        ['Supertrend Buy','Supertrend just flipped green','Fresh uptrend entry'],
+        ['Near 52W High','Price within 5% of 52-week high','Breakout watch-list'],
+        ['High ADX','ADX &gt; 25','Strong trending stocks only']
+      ]) + tip('💡 How to Run','Click any preset from the Dashboard right panel, or open the Scan page. Results appear progressively — no need to wait for the full scan.');
+    }}
+  ]
+},
+
+{
+  id:'tips', label:'Tips', icon:'💡', section:'Pages',
+  tags:['tips','intraday','btst','stbt','positional','options','trade'],
+  hero:{icon:'💡', title:'Tips Page',
+    desc:'Auto-generated trade ideas for Intraday, BTST, STBT, Positional and Options — with entry, target and stop-loss. Auto-refreshes every 60 s.',
+    tags:[['Auto-refresh','tg'],['Trade Ideas','tb'],['No Manual Scan','to']]},
+  blocks:[
+    {title:'Tip Types', icon:'📝', body: function(){
+      return tbl(['Type','Hold Period','Based On'],[
+        ['🕐 Intraday','Same day — exit before 3:20 PM','Momentum, VWAP, ATR breakout'],
+        ['🌙 BTST','Buy Today Sell Tomorrow','End-of-day momentum + next-day gap potential'],
+        ['🌅 STBT','Sell Today Buy Tomorrow (short)','Reversal / overbought near resistance'],
+        ['📅 Positional','3–15 trading days','Supertrend + EMA alignment + ADX strength'],
+        ['🎯 Options','Varies','ATM/OTM CE or PE based on bias + estimated premium']
+      ]) + tip('💡 Reading a Tip','Each card shows <strong>Entry</strong> (buy price), <strong>Target</strong> (profit exit), <strong>Stop Loss</strong> (cut-loss). Risk:Reward ratio = target distance ÷ stop distance. Aim for R:R ≥ 1.5.')
+         + warn('⚠️ Disclaimer','Tips are algorithm-generated from technical patterns. Always do your own analysis. Never risk money you cannot afford to lose.');
+    }},
+    {title:'Auto-Refresh & Copy', icon:'🔄', body: function(){
+      return '<p style="font-size:12px;color:#C9D1D9;line-height:1.8">Page refreshes every <strong>60 seconds</strong> — tips update automatically with new prices.<br>Use the <strong>Copy</strong> button on each card to copy the formatted tip text for sharing.<br>Filter tabs at the top let you view only Intraday, only BTST, etc.</p>';
+    }}
+  ]
+},
+{
+  id:'briefing', label:'Briefing', icon:'📋', section:'Pages',
+  tags:['briefing','daily','range','setup','supertrend','levels'],
+  hero:{icon:'📋', title:'Daily Briefing',
+    desc:'Trader-style daily brief: intraday range, weekly range, key levels, Supertrend signal and trade setup — like a professional analyst note for any symbol.',
+    tags:[['Daily Note','tb'],['Key Levels','tg'],['Trade Setup','to']]},
+  blocks:[
+    {title:'Reading a Briefing Card', icon:'🃏', body: function(){
+      return tbl(['Field','What It Means'],[
+        ['BUY / SELL / HOLD','Suggested action based on overall technical bias'],
+        ['Confidence %','Signal strength — higher = more indicators agree'],
+        ['Intraday Range','Expected Low–High for today (ATR + pivot maths)'],
+        ['Weekly Range','Expected range for the current week'],
+        ['Pivot / S1 / R1','Daily pivot point, first support and first resistance'],
+        ['EMA20 / EMA50','Dynamic support/resistance levels from moving averages'],
+        ['Trade Setup','Written entry logic — what the chart is showing'],
+        ['ST Signal','Supertrend flip note — highlighted when trend just changed'],
+        ['Full Briefing','Expandable paragraph — complete analyst-style summary']
+      ]);
+    }},
+    {title:'Preset Groups', icon:'🗂️', body: function(){
+      return '<p style="font-size:12px;color:#C9D1D9;line-height:2">'
+        + '<strong>Indices</strong> — Nifty50, BankNifty, Finnifty, Sensex<br>'
+        + '<strong>Commodities</strong> — Gold, Silver, Crude, NatGas, Copper<br>'
+        + '<strong>Nifty 50</strong> — Top 20 Nifty stocks<br>'
+        + '<strong>Custom</strong> — Add any symbols; saved in your browser</p>';
+    }}
+  ]
+},
+
+{
+  id:'options', label:'Options Chain', icon:'🎯', section:'Pages',
+  tags:['options','chain','greeks','iv','delta','theta','pcr','max pain'],
+  hero:{icon:'🎯', title:'Options Chain',
+    desc:'Full NSE options chain via Upstox API. CE/PE LTP, OI, IV, Delta, Gamma, Theta for all strikes. Requires valid Upstox token.',
+    tags:[['Upstox API','tb'],['Greeks','tp'],['Token Required','to']]},
+  blocks:[
+    {title:'Chain Tabs', icon:'📑', body: function(){
+      return tbl(['Tab','What It Shows'],[
+        ['Chain','Full CE + PE table for selected expiry — LTP, OI, IV, Change in OI'],
+        ['Greeks','Delta, Gamma, Theta, Vega per strike — computed from Upstox live data'],
+        ['OI Analysis','Max Pain level, PCR (Put-Call Ratio), OI buildup chart'],
+        ['IV Skew','Implied Volatility across strikes — shows market fear vs greed'],
+        ['Strategy','Basic strategy payoff diagram (Straddle, Strangle, Covered Call)']
+      ]) + warn('⚠️ Requires Token','Options data uses Upstox v2 /option/chain API. NSE website is blocked server-side (bot detection). Paste a valid token in Settings first.');
+    }},
+    {title:'Quick Reference — Options Terms', icon:'📖', body: function(){
+      return tbl(['Term','Meaning'],[
+        ['LTP','Last Traded Price — current option premium in ₹'],
+        ['OI','Open Interest — total open contracts; high OI at a strike = strong S/R level'],
+        ['IV','Implied Volatility — demand for options; high IV = expensive premiums'],
+        ['Delta','Option price change per ₹1 move in underlying. CE: 0 to 1 · PE: -1 to 0'],
+        ['Gamma','Rate of delta change — highest near ATM'],
+        ['Theta','Daily time decay — you lose this per day if price is flat'],
+        ['Vega','Sensitivity to IV change — long options gain when IV rises'],
+        ['Max Pain','Strike where maximum options expire worthless — price gravitates here near expiry'],
+        ['PCR','>1.2 bearish · <0.7 bullish · ~1.0 neutral'],
+        ['ATM','At The Money — strike closest to current price'],
+        ['ITM','In The Money — CE below price, PE above price'],
+        ['OTM','Out of The Money — CE above price, PE below price']
+      ]);
+    }}
+  ]
+},
+{
+  id:'alerts', label:'Alerts', icon:'🔔', section:'Pages',
+  tags:['alerts','notification','price','trigger','sqlite'],
+  hero:{icon:'🔔', title:'Alerts Page',
+    desc:'Set price-based alerts on any symbol. Get notified in the Dashboard when a stock crosses your level. Stored in SQLite — survives server restarts.',
+    tags:[['Price Alerts','tb'],['Persistent','tg'],['SQLite','to']]},
+  blocks:[
+    {title:'Creating an Alert', icon:'➕', body: function(){
+      return steps([
+        'Go to Alerts page → click <strong>+ New Alert</strong>',
+        'Enter symbol (e.g. <code>TCS</code>), choose condition <strong>Above</strong> or <strong>Below</strong>, enter price',
+        'Add an optional note (e.g. "Breakout target") → Save',
+        'Alert appears in the list and auto-checks every 3 s during market hours',
+        'When triggered a notification badge appears on the Dashboard bell icon'
+      ]);
+    }},
+    {title:'Alert States', icon:'🚦', body: function(){
+      return tbl(['State','Meaning'],[
+        ['🟡 Active','Watching — price has not hit the trigger yet'],
+        ['🟢 Triggered','Price crossed your level — check Dashboard notification'],
+        ['⚫ Disabled','Manually paused — use the toggle to re-enable']
+      ]) + tip('💡 Reset','After an alert triggers, click Reset to re-arm it for the next crossing.');
+    }}
+  ]
+},
+
+{
+  id:'backtester', label:'Backtester', icon:'🧪', section:'Pages',
+  tags:['backtest','strategy','historical','performance','win rate','drawdown'],
+  hero:{icon:'🧪', title:'Backtester',
+    desc:'Test any technical strategy on historical data and see how it would have performed — trades, PnL, win rate, max drawdown.',
+    tags:[['Historical','tb'],['Strategy','tp'],['Performance','tg']]},
+  blocks:[
+    {title:'How to Run', icon:'▶️', body: function(){
+      return steps([
+        'Enter a symbol (e.g. <code>RELIANCE</code>, <code>NIFTY50</code>)',
+        'Pick a strategy: <strong>EMA Crossover · RSI Reversal · Supertrend · MACD Signal</strong>',
+        'Select history period: 3M · 6M · 1Y · 2Y',
+        'Click <strong>Run Backtest</strong> — each trade is shown on a chart and in a results table'
+      ]);
+    }},
+    {title:'Understanding Results', icon:'📊', body: function(){
+      return tbl(['Metric','What It Means','Target'],[
+        ['Total Trades','Buy+sell pairs the strategy generated','—'],
+        ['Win Rate','% of trades that were profitable','Aim &gt; 50 %'],
+        ['Total Return %','Net profit/loss following every signal','Positive &amp; beats buy-hold'],
+        ['Max Drawdown','Biggest peak-to-trough loss during the period','Lower is better'],
+        ['Profit Factor','Gross profit ÷ gross loss','>1.5 is good'],
+        ['Avg Trade %','Average profit per closed trade','Positive']
+      ]) + warn('⚠️ Caveat','Past performance ≠ future results. Backtests exclude slippage, brokerage costs, and emotional errors.');
+    }}
+  ]
+},
+{
+  id:'gap-scanner', label:'Gap Scanner', icon:'📐', section:'Pages',
+  tags:['gap','open','overnight','gap up','gap down','intraday'],
+  hero:{icon:'📐', title:'Gap Scanner',
+    desc:'Finds stocks that opened significantly above or below the previous close. Gap-up and gap-down setups are popular for intraday and BTST trades.',
+    tags:[['Gap Up/Down','tb'],['Intraday','tg'],['Pre-market','to']]},
+  blocks:[
+    {title:'Gap Types', icon:'↕️', body: function(){
+      return tbl(['Type','Condition','Typical Play'],[
+        ['Gap Up','Open &gt; prev close by &gt; 0.5 %','Long if gap holds; short if gap fills quickly'],
+        ['Gap Down','Open &lt; prev close by &gt; 0.5 %','Short if gap holds; long bounce if gap fills'],
+        ['Gap Fill','Price returns to prev close level','Mean-reversion trade — watch for S/R near prev close']
+      ]) + tip('💡 Best Time','Run the scanner at 9:15–9:30 AM right after market open. Large gaps with above-average volume give the cleanest setups.');
+    }},
+    {title:'How to Use', icon:'🕹️', body: function(){
+      return steps([
+        'Open Gap Scanner page — scanner auto-runs and lists all gap-up and gap-down stocks',
+        'Sort by Gap % to see the biggest movers first',
+        'Click any symbol to open its Chart and verify with Supertrend / volume',
+        'Use the filter to show only Gap-Up, only Gap-Down, or set a minimum gap %'
+      ]);
+    }}
+  ]
+},
+
+{
+  id:'intel', label:'Market Intel (Algo)', icon:'🧠', section:'Pages',
+  tags:['intel','market','algo','macro','sector','breadth','fii','dii'],
+  hero:{icon:'🧠', title:'Market Intelligence',
+    desc:'Big-picture view before trading. Sector performance, overall market bias, Gold/Crude/USD macro snapshot, top gainers/losers.',
+    tags:[['Macro','tb'],['Sector','tp'],['Broad Market','tg']]},
+  blocks:[
+    {title:'What You See', icon:'👁️', body: function(){
+      return tbl(['Section','What It Means'],[
+        ['Market Bias','Bull / Bear / Neutral reading based on breadth and index technicals'],
+        ['Sector Heatmap','Which sectors are gaining vs losing — rotate into strong sectors'],
+        ['Gold / Crude / USD Snapshot','Key macro prices with their individual technical signals'],
+        ['Top Movers','Biggest Nifty-500 gainers and losers today'],
+        ['Breadth Indicators','Advance/Decline ratio — high A/D = broad rally, low = narrow or weak']
+      ]) + tip('💡 How to Use','Check this page before opening any trade. If market bias is Bearish and your sector is red, wait for better entry or reduce position size.');
+    }}
+  ]
+},
+{
+  id:'heatmap', label:'Heatmap', icon:'🗺️', section:'Pages',
+  tags:['heatmap','map','visual','sector','breadth'],
+  hero:{icon:'🗺️', title:'Market Heatmap',
+    desc:'Visual color-coded grid of the entire symbol list. Green = gaining, Red = losing. Size of each cell represents market-cap or % change.',
+    tags:[['Visual','tb'],['All Symbols','tg'],['At-a-glance','to']]},
+  blocks:[
+    {title:'Reading the Heatmap', icon:'🎨', body: function(){
+      return tbl(['Color','Meaning'],[
+        ['Dark Green','Strong gain (&gt;3 %)'],
+        ['Green','Moderate gain (1.5–3 %)'],
+        ['Light Green','Small gain (0–1.5 %)'],
+        ['Light Red','Small loss (0 to −1.5 %)'],
+        ['Red','Moderate loss (−1.5 to −3 %)'],
+        ['Dark Red','Heavy loss (&gt;−3 %)']
+      ]) + tip('💡 Filters','Use the group buttons (All / Nifty 50 / Commodities / Indices) to zoom into a specific universe. Click any cell to jump directly to that symbol\'s Chart.');
+    }}
+  ]
+},
+{
+  id:'settings', label:'Settings', icon:'⚙️', section:'Config',
+  tags:['settings','token','upstox','shoonya','theme','totp'],
+  hero:{icon:'⚙️', title:'Settings',
+    desc:'Configure Upstox token, Shoonya login, live data provider, and app theme.',
+    tags:[['Config','tb'],['API Token','to'],['Theme','tp']]},
+  blocks:[
+    {title:'Settings Tabs', icon:'🗂️', body: function(){
+      return tbl(['Tab','What You Configure'],[
+        ['Upstox','Paste daily access token here. Required for live prices and options chain.'],
+        ['Shoonya','Login with Shoonya broker credentials (needs correct TOTP base32 secret)'],
+        ['Provider','Switch between Upstox and Shoonya as the active live data source'],
+        ['Theme','Toggle dark/light mode or customise accent colours']
+      ]);
+    }},
+    {title:'Shoonya TOTP Setup', icon:'🔐', body: function(){
+      return warn('⚠️ TOTP Secret vs OTP Code',
+        'When setting up Shoonya 2FA, enter the <strong>base32 secret key</strong> from your authenticator app setup screen — NOT the rotating 6-digit OTP.<br>'
+        + 'It looks like: <code>JBSWY3DPEHPK3PXP</code><br>'
+        + 'You see this key only once when you first enable 2FA in Shoonya settings.')
+        + tip('💡 Where to Find It','Open Shoonya mobile app → Profile → Security → Disable/Re-enable 2FA → The QR code screen also shows the raw secret key as text.');
+    }}
+  ]
+},
+
+{
+  id:'commodity-prices', label:'Commodity Prices', icon:'🏅', section:'Reference',
+  tags:['gold','silver','crude','naturalgas','copper','mcx','conversion','usd','inr'],
+  hero:{icon:'🏅', title:'Commodity Price Guide',
+    desc:'How MCX commodity prices are calculated. Why Gold shows ₹1,49,000 instead of $4,200 — the USD-to-INR conversion and import duty explained.',
+    tags:[['MCX','to'],['Conversion','tb'],['Import Duty','ty']]},
+  blocks:[
+    {title:'Price Conversion Formula', icon:'🔢', body: function(){
+      return '<p style="font-size:12px;color:#C9D1D9;line-height:1.8;margin-bottom:10px">'
+        + 'yfinance returns <strong>USD futures prices</strong>. MCX prices include <strong>import duty + GST</strong>. '
+        + 'The app converts them using the live USD/INR rate (~94–95 as of Jun 2026) plus a duty premium.</p>'
+        + tbl(['Commodity','yfinance Ticker','MCX Unit','Duty Premium'],[
+          ['Gold (GOLD)','GC=F  ($/troy oz)','₹ per 10 g','+18 % (import duty + GST)'],
+          ['Silver (SILVER)','SI=F  ($/troy oz)','₹ per kg','+21 % (import duty + GST)'],
+          ['Crude Oil (CRUDEOIL)','CL=F  ($/barrel)','₹ per barrel','No duty — direct conversion'],
+          ['Natural Gas (NATURALGAS)','NG=F  ($/MMBtu)','₹ per MMBtu','No duty — direct conversion'],
+          ['Copper (COPPER)','HG=F  ($/lb)','₹ per kg','Minimal (~0 %)'],
+          ['Zinc (ZINC)','HG=F  (derived via LME ratio)','₹ per kg','×1.082 (LME Zn/Cu ratio)'],
+          ['Nickel (NICKEL)','HG=F  (derived via LME ratio)','₹ per kg','×1.050 (LME Ni/Cu ratio)']
+        ])
+        + tip('💡 Why Prices May Differ ±0.5%','During market hours Upstox gives real-time MCX prices. Off-hours prices come from yfinance global futures. A small gap is normal due to liquidity timing differences.');
+    }},
+    {title:'Price Sources by Session', icon:'📡', body: function(){
+      return tbl(['Time','Source','Accuracy'],[
+        ['MCX Open (9:00–23:30)','Upstox REST API → real MCX LTP','Exact MCX price'],
+        ['Off-hours','yfinance GC=F / SI=F etc. → converted to INR','±0.5 % of MCX'],
+        ['Watchlist (batch)','POST /api/ltp → Upstox or yfinance depending on session','Same as above'],
+        ['Quote / Briefing / Tips','All routed through same conversion → consistent everywhere','Consistent']
+      ]);
+    }}
+  ]
+},
+{
+  id:'glossary', label:'Glossary', icon:'📚', section:'Reference',
+  tags:['glossary','terms','ema','rsi','macd','atr','adx','vwap','supertrend','ltp','ohlcv','fno'],
+  hero:{icon:'📚', title:'Glossary of Terms',
+    desc:'Every indicator, abbreviation and trading term used across StockIQ — with plain-English explanations.',
+    tags:[['Reference','tb'],['Indicators','tp'],['Trading Terms','tg']]},
+  blocks:[
+    {title:'Technical Indicators A–Z', icon:'📊', body: function(){
+      return tbl(['Term','Full Form','Plain Meaning'],[
+        ['EMA','Exponential Moving Average','Weighted average — recent prices matter more. EMA20 = fast trend, EMA50 = medium, EMA200 = long-term'],
+        ['SMA','Simple Moving Average','Plain average of closing prices over N days — slower than EMA'],
+        ['RSI','Relative Strength Index','Momentum 0–100. &gt;70 = overbought (may fall) · &lt;30 = oversold (may bounce) · 50 = neutral'],
+        ['MACD','Moving Avg Convergence/Divergence','EMA12 minus EMA26; signal line = 9-day EMA of MACD. Crossover above signal = bullish'],
+        ['BB','Bollinger Bands','Middle band (EMA20) ± 2 standard deviations. Price near upper = stretched, near lower = oversold'],
+        ['ATR','Average True Range','14-day average daily price range. High ATR = volatile stock; use wider stop-losses'],
+        ['ADX','Average Directional Index','Trend strength 0–100. &gt;25 = strong trend · &lt;20 = sideways / choppy'],
+        ['VWAP','Volume Weighted Avg Price','Average price weighted by volume. Institutions buy near VWAP — key intraday level'],
+        ['OBV','On-Balance Volume','Running volume total. Rising OBV = accumulation · Falling = distribution'],
+        ['Stoch','Stochastic Oscillator','%K and %D lines 0–100. &gt;80 = overbought · &lt;20 = oversold'],
+        ['ST','Supertrend','ATR-based trailing stop line. Green line = uptrend · Red = downtrend · Flip = trade signal']
+      ]);
+    }},
+    {title:'Trading & Market Terms', icon:'💼', body: function(){
+      return tbl(['Term','Meaning'],[
+        ['LTP','Last Traded Price — most recent executed trade price on the exchange'],
+        ['OHLCV','Open, High, Low, Close, Volume — the five fields in every price candle'],
+        ['52W H/L','Highest and lowest price over the past 52 weeks (1 year)'],
+        ['R:R','Risk-to-Reward ratio. Distance to target ÷ distance to stop. Aim ≥1.5'],
+        ['SL / Stop Loss','Price where you exit if the trade goes wrong — limits your loss'],
+        ['NSE','National Stock Exchange — primary Indian equity exchange'],
+        ['BSE','Bombay Stock Exchange — older exchange; many SME/mid-cap stocks listed here'],
+        ['MCX','Multi Commodity Exchange — Gold, Silver, Crude, Copper, NatGas futures'],
+        ['FnO / F&O','Futures and Options — derivatives segment of NSE'],
+        ['PCR','Put-Call Ratio — bearish options vs bullish options. &gt;1.2 bearish · &lt;0.7 bullish'],
+        ['Max Pain','Strike price where the largest number of options expire worthless near expiry'],
+        ['IV Rank','Current IV relative to its 1-year range. High rank = expensive premiums'],
+        ['CE','Call option — profits when underlying price rises'],
+        ['PE','Put option — profits when underlying price falls'],
+        ['BTST','Buy Today Sell Tomorrow — overnight momentum trade'],
+        ['STBT','Sell Today Buy Tomorrow — overnight short-sell setup'],
+        ['Positional','Trade held for 3–15 days based on medium-term technical setup']
+      ]);
+    }}
+  ]
+}
+]; // END ALL_GUIDE
+
+// ── NAV BUILDER ────────────────────────────────────────────────
+var SECTIONS = ['Overview','Pages','Config','Reference'];
+
+function buildNav(q){
+  q = (q||'').toLowerCase().trim();
+  var nav = document.getElementById('sbNav');
+  nav.innerHTML = '';
+  SECTIONS.forEach(function(sec){
+    var items = ALL_GUIDE.filter(function(g){
+      if(g.section !== sec) return false;
+      if(!q) return true;
+      return g.label.toLowerCase().indexOf(q) >= 0 ||
+             (g.tags||[]).some(function(t){ return t.indexOf(q) >= 0; });
+    });
+    if(!items.length) return;
+    var hdr = document.createElement('div');
+    hdr.className = 'sb-sec-hdr';
+    hdr.textContent = sec;
+    nav.appendChild(hdr);
+    items.forEach(function(g){
+      var el = document.createElement('div');
+      el.className = 'sb-item';
+      el.id = 'ni-'+g.id;
+      el.innerHTML = '<span class="ic">'+g.icon+'</span>'+g.label;
+      el.onclick = function(){ showPage(g.id); };
+      nav.appendChild(el);
+    });
+  });
+}
+
+function filterNav(q){ buildNav(q); }
+
+// ── PAGE RENDERER ───────────────────────────────────────────────
+var activeId = null;
+
+function showPage(id){
+  var g = null;
+  for(var i=0;i<ALL_GUIDE.length;i++){ if(ALL_GUIDE[i].id===id){ g=ALL_GUIDE[i]; break; } }
+  if(!g) return;
+  activeId = id;
+
+  document.querySelectorAll('.sb-item').forEach(function(el){ el.classList.remove('active'); });
+  var ni = document.getElementById('ni-'+id);
+  if(ni){ ni.classList.add('active'); ni.scrollIntoView({block:'nearest'}); }
+
+  var tagMap = {tb:'tb',tg:'tg',to:'to',tp:'tp',ty:'ty'};
+  var tagsHtml = (g.hero.tags||[]).map(function(t){
+    return '<span class="htag '+(tagMap[t[1]]||'tb')+'">'+t[0]+'</span>';
+  }).join('');
+
+  var html = '<div class="hero"><div class="h-icon">'+g.hero.icon+'</div>'
+    +'<div><h1>'+g.hero.title+'</h1><p>'+g.hero.desc+'</p>'
+    +'<div class="htags">'+tagsHtml+'</div></div></div>';
+
+  (g.blocks||[]).forEach(function(b,i){
+    var bid = 'b-'+id+'-'+i;
+    var bodyHtml = typeof b.body === 'function' ? b.body() : b.body;
+    html += '<div class="sc">'
+      +'<div class="sc-h open" onclick="toggleBlock(\''+bid+'\',this)">'
+      +'<span class="sic">'+b.icon+'</span><h3>'+b.title+'</h3>'
+      +'<span class="arr">&#9658;</span></div>'
+      +'<div class="sc-b open" id="'+bid+'">'+bodyHtml+'</div>'
+      +'</div>';
+  });
+
+  var cw = document.getElementById('cw');
+  cw.innerHTML = html;
+  cw.scrollTop = 0;
+}
+
+function toggleBlock(id, head){
+  var body = document.getElementById(id);
+  if(!body) return;
+  var open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  head.classList.toggle('open', !open);
+}
+
+// ── PILL SWITCHER ───────────────────────────────────────────────
+function spill(el){
+  var parent = el.closest('.sc-b');
+  if(!parent) return;
+  var pills = parent.querySelectorAll('.pill');
+  var pcs   = parent.querySelectorAll('.pc');
+  var idx = Array.prototype.indexOf.call(pills, el);
+  pills.forEach(function(p){ p.classList.remove('on'); });
+  pcs.forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+  if(pcs[idx]) pcs[idx].classList.add('on');
+}
+
+// ── INIT ────────────────────────────────────────────────────────
+(function(){
+  var css = localStorage.getItem('theme_css');
+  if(css){ var s=document.createElement('style'); s.textContent=css; document.head.appendChild(s); }
+  buildNav();
+  showPage('getting-started');
+})();
+</script>
+</body>
+</html>

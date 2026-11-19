@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Screener</title>
+<link rel="stylesheet"href="css/style.css"/>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+nav{background:#161B22;border-bottom:1px solid #30363D;padding:0 20px;display:flex;align-items:center;gap:24px;height:52px}
+nav .logo{font-size:18px;font-weight:700;color:#58A6FF;margin-right:16px}
+nav a{color:#8B949E;font-size:13px;padding:4px 0;border-bottom:2px solid transparent}
+nav a.active,nav a:hover{color:#E6EDF3;border-bottom-color:#58A6FF}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.card{background:#161B22;border:1px solid #30363D;border-radius:8px;padding:16px;margin-bottom:16px}
+.card h3{font-size:13px;color:#8B949E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.btn{background:#238636;border:none;border-radius:6px;padding:8px 16px;color:#fff;cursor:pointer;font-size:13px;font-weight:600}
+.btn:hover{background:#2EA043}
+.btn.secondary{background:#21262D;border:1px solid #30363D;color:#E6EDF3}
+.btn.secondary:hover{background:#30363D}
+.btn.blue{background:#1F6FEB;border:none}.btn.blue:hover{background:#388BFD}
+.btn.red{background:#B91C1C;border:none}.btn.red:hover{background:#DC2626}
+select,input[type=number],input[type=text]{background:#0D1117;border:1px solid #30363D;border-radius:6px;padding:6px 10px;color:#E6EDF3;font-size:13px;outline:none}
+select:focus,input:focus{border-color:#58A6FF}
+
+.preset-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px}
+.preset-btn{background:#21262D;border:1px solid #30363D;border-radius:6px;padding:6px 12px;color:#8B949E;cursor:pointer;font-size:12px;transition:all .15s}
+.preset-btn:hover{background:#1C2128;border-color:#58A6FF;color:#58A6FF}
+.preset-btn.active{background:#1C2128;border-color:#58A6FF;color:#58A6FF;font-weight:600}
+
+.filter-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.filter-row select{min-width:180px}
+.filter-row input{width:100px}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#21262D;padding:8px 10px;text-align:left;color:#8B949E;font-weight:600;border-bottom:1px solid #30363D;white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid #21262D;white-space:nowrap}
+tr:hover td{background:#1C2128}
+.up{color:#3FB950}.down{color:#F85149}.neutral{color:#8B949E}
+.badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-strong-buy{background:#1A3A2A;color:#3FB950}
+.badge-buy{background:#1A3A2A;color:#56D364}
+.badge-neutral{background:#2A2A1A;color:#E3B341}
+.badge-sell{background:#3A1A1A;color:#F0883E}
+.badge-strong-sell{background:#3A1A1A;color:#F85149}
+.loading{color:#8B949E;padding:30px;text-align:center}
+.sym-link{color:#58A6FF;cursor:pointer;font-weight:600}
+.sym-link:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<nav>
+  <span class="logo"><img src="img/logo.png"/> StockIQ</span>
+  <a href="/">Hub<!-- Dashboard --></a>
+  <a href="/screener.html" class="active">Scan<!-- Screener --></a>
+  <a href="/tips.html"><!-- 💡 -->Tips<!-- Tips --></a>
+  <a href="/chart.html">Chart<!-- Charts --></a>
+  <a href="/options.html">Opts<!-- Options --></a>
+  <a href="/heatmap.html">Map<!-- Heatmap --></a>
+  <a href="/alerts.html"><!-- 🔔 --> Alert<!-- Alters --></a>
+  <a href="/intel.html"><!-- 🧠 --> Algo<!-- Logic --></a>
+  <a href="/gap-scanner.html"><!-- 📈 --> Gap<!-- Gaps --></a>
+  <a href="/backtester.html"><!-- 🧪 --> Test<!-- Backtest --></a>
+  <a href="/briefing.html"><!-- 📋 --> Brief<!-- Briefing --></a>
+  <a href="/corp-actions.html">Corp</a>
+  <a href="/notes.html">Log<!-- Notes --></a>
+  <a href="/premium.html" style="color:#E3B341">⭐ Premium</a>
+  <a href="/settings.html" style="margin-left:auto">⚙ Settings</a>
+</nav>
+
+<div class="container">
+  <div class="card">
+    <h3>Preset Screens</h3>
+    <div class="preset-grid" id="presetGrid"></div>
+  </div>
+
+  <div class="card">
+    <h3>Custom Filter Builder</h3>
+    <div id="filterRows"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn secondary" onclick="addFilter()">+ Add Filter</button>
+      <button class="btn blue"      onclick="runScreen()">▶ Run Screen</button>
+      <button class="btn secondary" onclick="clearAll()">✕ Clear</button>
+    </div>
+    <div id="statusMsg" style="margin-top:10px;font-size:12px;color:#8B949E;min-height:18px"></div>
+  </div>
+
+  <div class="card" id="resultsCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3>Results <span id="resultCount" style="color:#58A6FF;font-size:14px;text-transform:none;letter-spacing:0"></span></h3>
+      <button class="btn secondary" style="font-size:12px;padding:4px 12px" onclick="exportCSV()">Export CSV</button>
+    </div>
+    <div id="resultsWrap"><div class="loading">Run a screen to see results</div></div>
+  </div>
+</div>
+
+<script>
+const API = "";
+let presets = {};
+let results = [];
+let filterIdCounter = 0;
+
+const FIELDS = [
+  {value:"rsi",          label:"RSI (14)"},
+  {value:"score",        label:"Signal Score (0-100)"},
+  {value:"day_chg",      label:"Day Change %"},
+  {value:"price",        label:"Price (₹)"},
+  {value:"vol_ratio",    label:"Volume Ratio (vs avg)"},
+  {value:"bb_width_pct", label:"BB Width %"},
+  {value:"macd",         label:"MACD Value"},
+  {value:"ema20",        label:"EMA 20"},
+  {value:"ema50",        label:"EMA 50"},
+  {value:"ema200",       label:"EMA 200"},
+  {value:"adx",          label:"ADX (14)"},
+  {value:"above_ema200",    label:"Above EMA200",     bool:true},
+  {value:"golden_cross",    label:"Golden Cross",     bool:true},
+  {value:"macd_cross_bull", label:"MACD Bull Cross",  bool:true},
+  {value:"near_52w_high",   label:"Near 52W High",    bool:true},
+  {value:"near_52w_low",    label:"Near 52W Low",     bool:true},
+];
+
+const OPS_NUM  = ["<",">","<=",">=","=="];
+const OPS_BOOL = ["=="];
+
+// ── Load presets ──────────────────────────────────────────────────────────────
+fetch(`${API}/api/presets`).then(r=>r.json()).then(p=>{
+  presets = p;
+  const grid = document.getElementById("presetGrid");
+  grid.innerHTML = Object.entries(p).map(([k,v])=>`
+    <button class="preset-btn" id="pb-${k}" onclick="applyPreset('${k}')" title="${v.desc}">${v.name}</button>`
+  ).join("");
+
+  // Auto-apply URL preset
+  const urlPreset = new URLSearchParams(location.search).get("preset");
+  if(urlPreset && presets[urlPreset]) applyPreset(urlPreset);
+});
+
+// ── Preset ────────────────────────────────────────────────────────────────────
+function applyPreset(key){
+  if(!presets[key]) return;
+  // Highlight active preset
+  document.querySelectorAll(".preset-btn").forEach(b=>b.classList.remove("active"));
+  const pb = document.getElementById(`pb-${key}`);
+  if(pb) pb.classList.add("active");
+  // Clear existing filters and add preset filters
+  document.getElementById("filterRows").innerHTML = "";
+  filterIdCounter = 0;
+  presets[key].filters.forEach(f => addFilter(f));
+  runScreen(key);
+}
+
+// ── Filter builder ────────────────────────────────────────────────────────────
+function addFilter(f){
+  const id = ++filterIdCounter;
+  const field = f ? f.field : "rsi";
+  const fd    = FIELDS.find(x=>x.value===field) || FIELDS[0];
+  const isBool = !!fd.bool;
+  const op    = f ? f.op    : (isBool ? "==" : "<");
+  const val   = f ? f.value : (isBool ? true  : 30);
+
+  const div = document.createElement("div");
+  div.className = "filter-row";
+  div.id = `fr-${id}`;
+
+  const fieldOpts = FIELDS.map(x=>`<option value="${x.value}"${x.value===field?" selected":""}>${x.label}</option>`).join("");
+  const opOpts    = (isBool ? OPS_BOOL : OPS_NUM).map(o=>`<option value="${o}"${o===op?" selected":""}>${o}</option>`).join("");
+  const valInput  = isBool
+    ? `<select id="val-${id}"><option value="true"${val===true||val==="true"?" selected":""}>True</option><option value="false"${val===false||val==="false"?" selected":""}>False</option></select>`
+    : `<input type="number" id="val-${id}" step="any" value="${val}">`;
+
+  div.innerHTML = `
+    <select id="field-${id}" onchange="onFieldChange(${id})">${fieldOpts}</select>
+    <select id="op-${id}">${opOpts}</select>
+    ${valInput}
+    <button class="btn red" style="padding:4px 10px;font-size:12px" onclick="removeFilter(${id})">✕</button>`;
+  document.getElementById("filterRows").appendChild(div);
+}
+
+function removeFilter(id){
+  const el = document.getElementById(`fr-${id}`);
+  if(el) el.remove();
+}
+
+function onFieldChange(id){
+  const fieldSel = document.getElementById(`field-${id}`);
+  const fd = FIELDS.find(x=>x.value===fieldSel.value);
+  const isBool = fd && fd.bool;
+
+  // Update op select
+  const opSel = document.getElementById(`op-${id}`);
+  opSel.innerHTML = (isBool ? OPS_BOOL : OPS_NUM).map(o=>`<option value="${o}">${o}</option>`).join("");
+
+  // Replace value input
+  const oldVal = document.getElementById(`val-${id}`);
+  const newVal = document.createElement(isBool ? "select" : "input");
+  newVal.id = `val-${id}`;
+  if(isBool){
+    newVal.innerHTML = `<option value="true">True</option><option value="false">False</option>`;
+  } else {
+    newVal.type = "number"; newVal.step = "any"; newVal.value = "30";
+  }
+  oldVal.parentNode.replaceChild(newVal, oldVal);
+}
+
+function clearAll(){
+  document.getElementById("filterRows").innerHTML = "";
+  filterIdCounter = 0;
+  document.querySelectorAll(".preset-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("statusMsg").textContent = "";
+  document.getElementById("resultCount").textContent = "";
+  document.getElementById("resultsWrap").innerHTML = '<div class="loading">Run a screen to see results</div>';
+  results = [];
+}
+
+function getFilters(){
+  const rows = document.querySelectorAll(".filter-row");
+  const filters = [];
+  rows.forEach(row=>{
+    const id = row.id.replace("fr-","");
+    const fieldEl = document.getElementById(`field-${id}`);
+    const opEl    = document.getElementById(`op-${id}`);
+    const valEl   = document.getElementById(`val-${id}`);
+    if(!fieldEl || !opEl || !valEl) return;
+    const field = fieldEl.value;
+    const op    = opEl.value;
+    const fd    = FIELDS.find(x=>x.value===field);
+    let val = valEl.value;
+    if(fd && fd.bool) val = (val === "true");
+    else val = parseFloat(val);
+    filters.push({field, op, value: val});
+  });
+  return filters;
+}
+
+// ── Run screen ────────────────────────────────────────────────────────────────
+function runScreen(presetKey){
+  const filters = (presetKey && presets[presetKey]) ? presets[presetKey].filters : getFilters();
+  if(!filters || !filters.length){ alert("Add at least one filter first"); return; }
+
+  const statusEl  = document.getElementById("statusMsg");
+  const countEl   = document.getElementById("resultCount");
+  const resultsEl = document.getElementById("resultsWrap");
+
+  statusEl.textContent  = "⏳ Starting scan...";
+  countEl.textContent   = "";
+  resultsEl.innerHTML   = '<div class="loading">Scanning stocks — results appear as they are found...</div>';
+  results = [];
+  const body = (presetKey && presets[presetKey]) ? {preset: presetKey} : {filters};
+
+  // Use SSE streaming endpoint
+  fetch(`${API}/api/screen/stream`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(body)
+  }).then(response => {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+
+    function read(){
+      reader.read().then(({done, value}) => {
+        if(done){
+          renderResults(results);
+          return;
+        }
+        buf += decoder.decode(value, {stream: true});
+        const lines = buf.split("\n");
+        buf = lines.pop(); // keep incomplete line
+        lines.forEach(line => {
+          if(!line.startsWith("data: ")) return;
+          try {
+            const msg = JSON.parse(line.slice(6));
+            if(msg.type === "progress"){
+              statusEl.textContent = `⏳ Scanning ${msg.symbol}... (${msg.current}/${msg.total}) — ${results.length} matched`;
+            } else if(msg.type === "match"){
+              results.push(msg.row);
+              countEl.textContent = `(${results.length} found)`;
+              appendRow(msg.row, results.length); // append only the new row
+            } else if(msg.type === "done"){
+              statusEl.textContent = `✓ Done — ${msg.count} stock${msg.count!==1?"s":""} matched`;
+              countEl.textContent  = `(${msg.count} found)`;
+              if(!msg.count) resultsEl.innerHTML = '<div class="loading">No stocks matched the filters</div>';
+            } else if(msg.error){
+              statusEl.textContent = "Error: " + msg.error;
+            }
+          } catch(e){}
+        });
+        read();
+      }).catch(e => {
+        statusEl.textContent = "Stream error: " + e.message;
+      });
+    }
+    read();
+  }).catch(e => {
+    statusEl.textContent = "Error: " + e.message;
+    resultsEl.innerHTML = `<div style="color:#F85149;padding:20px">Error: ${e.message}</div>`;
+  });
+}
+
+// ── Render results ────────────────────────────────────────────────────────────
+function badgeCls(s){
+  return {"Strong Buy":"strong-buy","Buy":"buy","Neutral":"neutral","Sell":"sell","Strong Sell":"strong-sell"}[s]||"neutral";
+}
+
+function rowHTML(r, i){
+  return `<tr id="row-${r.symbol}">
+    <td style="color:#8B949E">${i}</td>
+    <td><span class="sym-link" onclick="goChart('${r.symbol}')">${r.symbol}</span></td>
+    <td>₹${r.price}</td>
+    <td class="${r.day_chg>0?"up":r.day_chg<0?"down":"neutral"}">${r.day_chg>0?"+":""}${r.day_chg}%</td>
+    <td class="${r.rsi!=null&&r.rsi<30?"up":r.rsi!=null&&r.rsi>70?"down":"neutral"}">${r.rsi??'—'}</td>
+    <td class="${r.macd!=null&&r.macd>0?"up":"down"}">${r.macd??'—'}</td>
+    <td>${r.ema20??'—'}</td>
+    <td>${r.ema50??'—'}</td>
+    <td class="${r.vol_ratio>2?"up":"neutral"}">${r.vol_ratio}x</td>
+    <td style="font-weight:700">${r.score}</td>
+    <td><span class="badge badge-${badgeCls(r.summary)}">${r.summary}</span></td>
+  </tr>`;
+}
+
+function ensureTable(){
+  const wrap = document.getElementById("resultsWrap");
+  if(!wrap.querySelector("table")){
+    wrap.innerHTML = `<div style="overflow-x:auto"><table>
+      <thead><tr>
+        <th>#</th><th>Symbol</th><th>Price</th><th>Day Chg%</th>
+        <th>RSI</th><th>MACD</th><th>EMA20</th><th>EMA50</th>
+        <th>Vol Ratio</th><th>Score</th><th>Signal</th>
+      </tr></thead>
+      <tbody id="resultsTbody"></tbody>
+    </table></div>`;
+  }
+}
+
+function appendRow(r, i){
+  ensureTable();
+  const tbody = document.getElementById("resultsTbody");
+  tbody.insertAdjacentHTML("beforeend", rowHTML(r, i));
+}
+
+function renderResults(rows){
+  if(!rows.length){
+    document.getElementById("resultsWrap").innerHTML = '<div class="loading">No stocks matched the filters</div>';
+    return;
+  }
+  ensureTable();
+  const tbody = document.getElementById("resultsTbody");
+  tbody.innerHTML = rows.map((r,i) => rowHTML(r, i+1)).join("");
+}
+
+function goChart(sym){
+  window.location.href = `/chart.html?symbol=${sym}`;
+}
+
+function exportCSV(){
+  if(!results.length) return;
+  const cols = ["symbol","price","day_chg","rsi","macd","ema20","ema50","vol_ratio","score","summary"];
+  const csv = [cols.join(","), ...results.map(r=>cols.map(c=>r[c]??'').join(","))].join("\n");
+  const a = document.createElement("a");
+  a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+  a.download = "screen_results.csv";
+  a.click();
+}
+</script>
+</body>
+</html>
