@@ -1,0 +1,39 @@
+Full Recording Script with Voiceover
+[0:00 – 0:10] — Show desktop, start.bat
+
+"This is TorrentSignals — a Frankenstein project that stitches BitTorrent peer-to-peer networking with real stock market analysis. Two technologies that have no business working together."
+
+[0:10 – 0:20] — Show 3 tabs opening
+
+"Each browser tab acts as a peer in the swarm — just like BitTorrent where each user shares a piece of a file. Here each peer will compute a different set of stocks."
+
+[0:20 – 0:35] — Click Join Swarm in each tab one by one
+
+"Tab 1 joins the swarm — it gets assigned NIFTY, BANKNIFTY, RELIANCE, GOLD..." "Tab 2 joins — different stocks: TCS, HDFCBANK, WIPRO, SILVER..." "Tab 3 joins — its own set: SBIN, AXISBANK, CRUDEOIL, COPPER..." "3 peers connected. Each has a unique ID and unique symbols — no overlap."
+
+[0:35 – 0:50] — Click Compute in each tab
+
+"Now each peer starts computing independently — RSI, MACD, SuperTrend and ATR for its assigned stocks." "This is the Frankenstein moment — BitTorrent distributing computation instead of files."
+
+[0:50 – 1:40] — Watch signals appearing live
+
+"Signals are aggregating in real time from all 3 peers into one shared dashboard." "Each card shows live price, bias — bullish or bearish — entry, stop loss and target." "Notice the swarm activity log — each peer computing its own symbols simultaneously."
+
+[1:40 – 1:55] — Show final dashboard with all 20 signals
+
+"20 stocks fully analyzed — GOLD, BANKNIFTY, SILVER, CRUDEOIL, all major indices and F&O stocks." "3 peers finished in 1 minute 40 seconds. One peer alone would take 5 minutes." "That's the BitTorrent effect — 3 times faster with distributed computation."
+
+[1:55 – 2:10] — Switch between tabs to show different peer IDs
+
+"Each tab computed different stocks — look at the peer IDs. All different." "But every tab shows the same complete dashboard — just like BitTorrent where every peer ends up with the complete file."
+
+[2:10 – 2:20] — End screen
+
+"TorrentSignals — Frankenstein category — Kiroween 2026. BitTorrent was built to share files. We used it to share stock market computation. Built with Kiro."
+
+Tips while recording:
+Speak slowly and clearly
+Pause 2 seconds before clicking each button
+Move mouse slowly so judges can follow
+If you make a mistake — just keep going, don't stop
+Go record! 🎃
